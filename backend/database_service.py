@@ -212,5 +212,77 @@ class DatabaseService:
             self.logger.error(f"Kategoriye göre tarifler getirilirken hata: {str(e)}")
             return []
 
+    def login_user(self, username, password):
+        """Kullanıcı girişi kontrolü yapar"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT [id], [username], [email], [password_hash], [profile_image], [appearance]
+                    FROM [dbo].[User]
+                    WHERE [username] = ?
+                """, username)
+                
+                user = cursor.fetchone()
+                if not user:
+                    return None, "Kullanıcı bulunamadı"
+                
+                # Kullanıcı bulundu, bilgileri döndür
+                return {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'profile_image': user.profile_image,
+                    'appearance': user.appearance
+                }, None
+                
+        except Exception as e:
+            self.logger.error(f"Giriş yapılırken hata: {str(e)}")
+            return None, f"Giriş yapılırken hata oluştu: {str(e)}"
+
+    def register_user(self, username, email, password):
+        """Yeni kullanıcı kaydı oluşturur"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Kullanıcı adı kontrolü
+                cursor.execute("SELECT id FROM [dbo].[User] WHERE username = ?", username)
+                if cursor.fetchone():
+                    return None, "Bu kullanıcı adı zaten kullanılıyor"
+                
+                # Email kontrolü
+                cursor.execute("SELECT id FROM [dbo].[User] WHERE email = ?", email)
+                if cursor.fetchone():
+                    return None, "Bu email adresi zaten kullanılıyor"
+                
+                # Yeni kullanıcı ekleme
+                cursor.execute("""
+                    INSERT INTO [dbo].[User] (username, email, password_hash)
+                    VALUES (?, ?, ?)
+                """, username, email, password)  # Şimdilik şifreyi direkt kaydediyoruz
+                
+                conn.commit()
+                
+                # Eklenen kullanıcının bilgilerini getir
+                cursor.execute("""
+                    SELECT [id], [username], [email], [profile_image], [appearance]
+                    FROM [dbo].[User]
+                    WHERE [username] = ?
+                """, username)
+                
+                user = cursor.fetchone()
+                return {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'profile_image': user.profile_image,
+                    'appearance': user.appearance
+                }, None
+                
+        except Exception as e:
+            self.logger.error(f"Kullanıcı kaydı oluşturulurken hata: {str(e)}")
+            return None, f"Kullanıcı kaydı oluşturulurken hata oluştu: {str(e)}"
+
 # Singleton instance
 db_service = DatabaseService() 
