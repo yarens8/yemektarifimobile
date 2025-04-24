@@ -193,12 +193,15 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // Tüm tarifleri al, görüntülenme sayısına göre sırala ve ilk 6'sını al
-    final recipes = provider.recipesByCategory.values
-        .expand((recipes) => recipes)
-        .toList()
+    // Seçili kategorinin ID'sini bul
+    final selectedCategoryId = provider.categories
+        .firstWhere((category) => category['name'] == _selectedCategory, orElse: () => {'id': -1})['id'];
+
+    // Seçili kategoriye ait tarifleri al ve görüntülenme sayısına göre sırala
+    final recipes = (provider.recipesByCategory[selectedCategoryId] ?? [])
       ..sort((a, b) => (b['views'] ?? 0).compareTo(a['views'] ?? 0));
-    
+
+    // İlk 6 tarifi al
     final topRecipes = recipes.take(6).toList();
 
     if (topRecipes.isEmpty) {
@@ -214,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Henüz tarif bulunmuyor',
+                'Bu kategoride henüz tarif bulunmuyor',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey.shade600,

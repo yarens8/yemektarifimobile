@@ -35,10 +35,11 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   http: ^1.1.0  # HTTP istekleri için
-  provider: ^6.1.1  # State management için
+  provider: ^6.0.0
   font_awesome_flutter: ^10.6.0  # Font Awesome ikonları için
   logging: ^1.2.0  # Logging için
   dio: ^5.4.0
+  image_picker: ^1.0.7
 
 dev_dependencies:
   flutter_test:

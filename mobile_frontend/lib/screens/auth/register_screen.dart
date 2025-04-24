@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
+import '../../providers/user_provider.dart';
+import '../../models/user.dart';
 import '../main_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -54,7 +57,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       if (result['success']) {
-        // Kayıt başarılı, ana sayfaya yönlendir
+        // Kullanıcı bilgilerini UserProvider'a aktar
+        if (result['user'] != null) {
+          final user = User.fromJson(result['user']);
+          context.read<UserProvider>().setUser(user);
+        }
+
+        // Ana sayfaya yönlendir
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainScreen()),

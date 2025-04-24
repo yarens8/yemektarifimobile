@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'register_screen.dart';
 import '../../services/auth_service.dart';
+import '../../providers/user_provider.dart';
+import '../../models/user.dart';
 import '../main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -49,7 +52,13 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (result['success']) {
-        // Giriş başarılı, ana sayfaya yönlendir
+        // Kullanıcı bilgilerini UserProvider'a aktar
+        if (result['user'] != null) {
+          final user = User.fromJson(result['user']);
+          context.read<UserProvider>().setUser(user);
+        }
+
+        // Ana sayfaya yönlendir
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainScreen()),

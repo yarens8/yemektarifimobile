@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
+import 'auth/login_screen.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -18,72 +22,150 @@ class ProfileScreen extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
+          // Profil düzenleme butonu
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(Icons.edit),
             onPressed: () {
-              // TODO: Ayarlar sayfasına yönlendir
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+              );
             },
+          ),
+          // Çıkış yapma butonu
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              if (value == 'logout') {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Çıkış Yap'),
+                    content: const Text('Çıkış yapmak istediğinize emin misiniz?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('İptal'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // UserProvider'dan çıkış yap
+                          context.read<UserProvider>().clearUser();
+                          // Login ekranına yönlendir
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            (route) => false,
+                          );
+                        },
+                        child: const Text('Çıkış Yap', style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  ),
+                );
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              const PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Çıkış Yap', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const CircleAvatar(
-            radius: 50,
-            backgroundColor: Colors.pink,
-            child: Icon(
-              Icons.person,
-              size: 50,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Misafir Kullanıcı',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 32),
-          _buildProfileMenuItem(
-            icon: Icons.favorite,
-            title: 'Favori Tariflerim',
-            onTap: () {
-              // TODO: Favori tariflere yönlendir
-            },
-          ),
-          _buildProfileMenuItem(
-            icon: Icons.history,
-            title: 'Son Görüntülenenler',
-            onTap: () {
-              // TODO: Son görüntülenenlere yönlendir
-            },
-          ),
-          _buildProfileMenuItem(
-            icon: Icons.add_circle,
-            title: 'Tarif Ekle',
-            onTap: () {
-              // TODO: Tarif ekleme sayfasına yönlendir
-            },
-          ),
-          _buildProfileMenuItem(
-            icon: Icons.notifications,
-            title: 'Bildirimler',
-            onTap: () {
-              // TODO: Bildirimlere yönlendir
-            },
-          ),
-          _buildProfileMenuItem(
-            icon: Icons.help,
-            title: 'Yardım',
-            onTap: () {
-              // TODO: Yardım sayfasına yönlendir
-            },
-          ),
-        ],
+      body: Consumer<UserProvider>(
+        builder: (context, userProvider, child) {
+          final user = userProvider.currentUser;
+          
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // Profil fotoğrafı
+              CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.pink.shade100,
+                backgroundImage: user?.profileImage != null 
+                  ? NetworkImage(user!.profileImage!) 
+                  : null,
+                child: user?.profileImage == null
+                  ? const Icon(
+                      Icons.person,
+                      size: 50,
+                      color: Colors.white,
+                    )
+                  : null,
+              ),
+              const SizedBox(height: 16),
+              
+              // Kullanıcı adı
+              Text(
+                user?.username ?? 'Misafir Kullanıcı',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              
+              // E-posta
+              if (user?.email != null)
+                Text(
+                  user!.email,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              
+              const SizedBox(height: 32),
+              
+              // Menü öğeleri
+              _buildProfileMenuItem(
+                icon: Icons.favorite,
+                title: 'Favori Tariflerim',
+                onTap: () {
+                  // TODO: Favori tariflere yönlendir
+                },
+              ),
+              _buildProfileMenuItem(
+                icon: Icons.history,
+                title: 'Son Görüntülenenler',
+                onTap: () {
+                  // TODO: Son görüntülenenlere yönlendir
+                },
+              ),
+              _buildProfileMenuItem(
+                icon: Icons.add_circle,
+                title: 'Tarif Ekle',
+                onTap: () {
+                  // TODO: Tarif ekleme sayfasına yönlendir
+                },
+              ),
+              _buildProfileMenuItem(
+                icon: Icons.notifications,
+                title: 'Bildirimler',
+                onTap: () {
+                  // TODO: Bildirimlere yönlendir
+                },
+              ),
+              _buildProfileMenuItem(
+                icon: Icons.help,
+                title: 'Yardım',
+                onTap: () {
+                  // TODO: Yardım sayfasına yönlendir
+                },
+              ),
+            ],
+          );
+        },
       ),
     );
   }
