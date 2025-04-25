@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import 'auth/login_screen.dart';
 import 'edit_profile_screen.dart';
+import 'my_recipes_screen.dart';
+import 'favorite_recipes_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -132,7 +134,22 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.favorite,
                 title: 'Favori Tariflerim',
                 onTap: () {
-                  // TODO: Favori tariflere yönlendir
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FavoriteRecipesScreen(),
+                    ),
+                  );
+                },
+              ),
+              _buildProfileMenuItem(
+                icon: Icons.restaurant_menu,
+                title: 'Tariflerim',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MyRecipesScreen()),
+                  );
                 },
               ),
               _buildProfileMenuItem(

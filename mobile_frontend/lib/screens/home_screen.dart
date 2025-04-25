@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/recipe_provider.dart';
+import '../models/recipe.dart';
 import 'recipe_detail_screen.dart';
 import 'filter_screen.dart';
 
@@ -200,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Seçili kategoriye ait tarifleri al ve görüntülenme sayısına göre sırala
     final recipes = (provider.recipesByCategory[selectedCategoryId] ?? [])
       ..sort((a, b) => (b['views'] ?? 0).compareTo(a['views'] ?? 0));
-
+    
     // İlk 6 tarifi al
     final topRecipes = recipes.take(6).toList();
 
@@ -257,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => RecipeDetailScreen(recipe: recipe),
+              builder: (context) => RecipeDetailScreen(recipe: Recipe.fromJson(recipe)),
             ),
           );
         },
@@ -501,7 +502,7 @@ class RecipeSearchDelegate extends SearchDelegate<String> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => RecipeDetailScreen(recipe: recipe),
+                    builder: (context) => RecipeDetailScreen(recipe: Recipe.fromJson(recipe)),
                   ),
                 );
               },

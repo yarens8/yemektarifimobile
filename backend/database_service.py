@@ -1,6 +1,7 @@
 import pyodbc
 from database_config import get_connection_string
 import logging
+import re
 
 class DatabaseService:
     def __init__(self):
@@ -283,6 +284,223 @@ class DatabaseService:
         except Exception as e:
             self.logger.error(f"Kullanıcı kaydı oluşturulurken hata: {str(e)}")
             return None, f"Kullanıcı kaydı oluşturulurken hata oluştu: {str(e)}"
+
+    def update_user_profile(self, username, email):
+        """Kullanıcı profilini günceller"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Email formatını kontrol et
+                if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+                    return None, "Geçersiz email formatı"
+                    
+                # Kullanıcı adının benzersiz olduğunu kontrol et
+                cursor.execute("""
+                    SELECT [id] FROM [dbo].[User] 
+                    WHERE [username] = ? AND [email] != ?
+                """, (username, email))
+                existing_user = cursor.fetchone()
+                
+                if existing_user:
+                    return None, "Bu kullanıcı adı zaten kullanılıyor"
+                    
+                # Email'in benzersiz olduğunu kontrol et
+                cursor.execute("""
+                    SELECT [id] FROM [dbo].[User] 
+                    WHERE [email] = ? AND [username] != ?
+                """, (email, username))
+                existing_email = cursor.fetchone()
+                
+                if existing_email:
+                    return None, "Bu email adresi zaten kullanılıyor"
+                    
+                # Profili güncelle
+                cursor.execute("""
+                    UPDATE [dbo].[User]
+                    SET [username] = ?, [email] = ?
+                    WHERE [email] = ?
+                """, (username, email, email))
+                
+                conn.commit()
+                
+                # Güncellenmiş kullanıcı bilgilerini al
+                cursor.execute("""
+                    SELECT [id], [username], [email], [profile_image], [appearance]
+                    FROM [dbo].[User]
+                    WHERE [email] = ?
+                """, (email,))
+                updated_user = cursor.fetchone()
+                
+                if updated_user:
+                    return {
+                        'id': updated_user.id,
+                        'username': updated_user.username,
+                        'email': updated_user.email,
+                        'profile_image': updated_user.profile_image,
+                        'appearance': updated_user.appearance
+                    }, None
+                else:
+                    return None, "Kullanıcı güncellenirken bir hata oluştu"
+                    
+        except Exception as e:
+            self.logger.error(f"Profil güncellenirken hata: {str(e)}")
+            return None, str(e)
+
+    def change_password(self, email, current_password, new_password):
+        """Kullanıcı şifresini değiştirir"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Kullanıcıyı kontrol et
+                cursor.execute("""
+                    SELECT [id]
+                    FROM [dbo].[User]
+                    WHERE [email] = ?
+                """, (email,))
+                
+                user = cursor.fetchone()
+                if not user:
+                    return None, "Kullanıcı bulunamadı"
+                
+                # Yeni şifreyi güncelle
+                cursor.execute("""
+                    UPDATE [dbo].[User]
+                    SET [password_hash] = ?
+                    WHERE [email] = ?
+                """, (new_password, email))
+                
+                conn.commit()
+                
+                return {
+                    'message': 'Şifre başarıyla güncellendi'
+                }, None
+                
+        except Exception as e:
+            self.logger.error(f"Şifre değiştirilirken hata: {str(e)}")
+            return None, str(e)
+
+    def get_user_recipes(self, user_id):
+        """Kullanıcının tariflerini getirir"""
+        try:
+            print(f"Getting recipes for user_id: {user_id}")  # Debug log
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT
+                        id,
+                        title,
+                        views
+                    FROM [dbo].[Recipe]
+                    WHERE user_id = ?
+                    ORDER BY created_at DESC
+                """, (user_id,))
+                
+                recipes = []
+                for row in cursor.fetchall():
+                    recipes.append({
+                        'id': row[0],
+                        'title': row[1],
+                        'views': row[2]
+                    })
+                
+                print(f"Found {len(recipes)} recipes")  # Debug log
+                print("Recipes:", recipes)  # Debug log
+                return recipes
+                
+        except Exception as e:
+            print(f"Error in get_user_recipes: {str(e)}")  # Debug log
+            raise Exception(f"Kullanıcının tarifleri getirilirken hata oluştu: {str(e)}")
+
+    def add_to_favorites(self, user_id, recipe_id):
+        """Tarifi kullanıcının favorilerine ekler"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Önce bu tarifin zaten favorilerde olup olmadığını kontrol et
+                cursor.execute("""
+                    SELECT COUNT(*) as count
+                    FROM [dbo].[favorites]
+                    WHERE user_id = ? AND recipe_id = ?
+                """, (user_id, recipe_id))
+                
+                if cursor.fetchone()[0] > 0:
+                    return False, "Bu tarif zaten favorilerinizde"
+                
+                # Favorilere ekle
+                cursor.execute("""
+                    INSERT INTO [dbo].[favorites] (user_id, recipe_id)
+                    VALUES (?, ?)
+                """, (user_id, recipe_id))
+                
+                conn.commit()
+                return True, "Tarif favorilere eklendi"
+                
+        except Exception as e:
+            self.logger.error(f"Favori ekleme hatası: {str(e)}")
+            return False, f"Tarif favorilere eklenirken hata oluştu: {str(e)}"
+
+    def remove_from_favorites(self, user_id, recipe_id):
+        """Tarifi kullanıcının favorilerinden kaldırır"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute("""
+                    DELETE FROM [dbo].[favorites]
+                    WHERE user_id = ? AND recipe_id = ?
+                """, (user_id, recipe_id))
+                
+                conn.commit()
+                return True, "Tarif favorilerden kaldırıldı"
+                
+        except Exception as e:
+            self.logger.error(f"Favorilerden kaldırma hatası: {str(e)}")
+            return False, f"Tarif favorilerden kaldırılırken hata oluştu: {str(e)}"
+
+    def get_user_favorites(self, user_id):
+        """Kullanıcının favori tariflerini getirir"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute("""
+                    SELECT r.*
+                    FROM [dbo].[Recipe] r
+                    INNER JOIN [dbo].[favorites] f ON r.id = f.recipe_id
+                    WHERE f.user_id = ?
+                    ORDER BY r.title
+                """, (user_id,))
+                
+                columns = [column[0] for column in cursor.description]
+                recipes = [dict(zip(columns, row)) for row in cursor.fetchall()]
+                
+                return recipes, None
+                
+        except Exception as e:
+            self.logger.error(f"Favori tarifleri getirme hatası: {str(e)}")
+            return None, f"Favori tarifler getirilirken hata oluştu: {str(e)}"
+
+    def is_favorite(self, user_id, recipe_id):
+        """Tarifin kullanıcının favorilerinde olup olmadığını kontrol eder"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute("""
+                    SELECT COUNT(*) as count
+                    FROM [dbo].[favorites]
+                    WHERE user_id = ? AND recipe_id = ?
+                """, (user_id, recipe_id))
+                
+                count = cursor.fetchone()[0]
+                return count > 0, None
+                
+        except Exception as e:
+            self.logger.error(f"Favori kontrolü hatası: {str(e)}")
+            return False, f"Favori kontrolü yapılırken hata oluştu: {str(e)}"
 
 # Singleton instance
 db_service = DatabaseService() 

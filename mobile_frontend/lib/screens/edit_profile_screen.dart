@@ -256,29 +256,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              _currentPasswordController.clear();
-              _newPasswordController.clear();
-              _confirmPasswordController.clear();
-              Navigator.pop(context);
-            },
+            onPressed: () => Navigator.pop(context),
             child: Text(
               'İptal',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(color: Colors.grey.shade600),
             ),
           ),
           ElevatedButton(
             onPressed: () async {
-              if (_newPasswordController.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Yeni şifre boş olamaz')),
-                );
-                return;
-              }
-              
               if (_newPasswordController.text != _confirmPasswordController.text) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Yeni şifreler eşleşmiyor')),
@@ -286,51 +271,66 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 return;
               }
 
-              final result = await _authService.changePassword(
-                _currentPasswordController.text,
-                _newPasswordController.text,
-              );
+              final user = context.read<UserProvider>().currentUser;
+              if (user == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Kullanıcı bilgisi bulunamadı')),
+                );
+                return;
+              }
 
-              if (!mounted) return;
+              setState(() => _isLoading = true);
+              
+              try {
+                final result = await _authService.changePassword(
+                  user.email,
+                  _currentPasswordController.text,
+                  _newPasswordController.text,
+                );
 
-              if (result['success']) {
-                _currentPasswordController.clear();
-                _newPasswordController.clear();
-                _confirmPasswordController.clear();
-                Navigator.pop(context);
+                if (!mounted) return;
+                Navigator.pop(context);  // Dialog'u kapat
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(result['message']),
-                    backgroundColor: Colors.green,
+                    backgroundColor: result['success'] ? Colors.green : Colors.red,
                   ),
                 );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(result['message']),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+
+                // Şifre başarıyla değiştiyse input'ları temizle
+                if (result['success']) {
+                  _currentPasswordController.clear();
+                  _newPasswordController.clear();
+                  _confirmPasswordController.clear();
+                }
+              } finally {
+                if (mounted) {
+                  setState(() => _isLoading = false);
+                }
               }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.pink.shade400,
-              foregroundColor: Colors.white,
-              elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            child: const Text(
-              'Değiştir',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child: _isLoading
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text(
+                    'Değiştir',
+                    style: TextStyle(color: Colors.white),
+                  ),
           ),
         ],
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       ),
     );
   }

@@ -1,10 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../models/user.dart';
 
 class AuthService {
   // API'nin base URL'i
   static const String baseUrl = 'http://192.168.1.107:5000/api';
+  User? _currentUser;
+
+  // Setter method for currentUser
+  void setCurrentUser(User user) {
+    _currentUser = user;
+  }
 
   // Kullanıcı girişi
   Future<Map<String, dynamic>> login(String username, String password) async {
@@ -172,12 +179,13 @@ class AuthService {
   }
 
   // Şifre değiştir
-  Future<Map<String, dynamic>> changePassword(String currentPassword, String newPassword) async {
+  Future<Map<String, dynamic>> changePassword(String email, String currentPassword, String newPassword) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/auth/password'),
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/change-password'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
+          'email': email,
           'currentPassword': currentPassword,
           'newPassword': newPassword,
         }),

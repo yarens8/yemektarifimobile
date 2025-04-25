@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../models/recipe.dart';
 import 'recipe_detail_screen.dart';
 
 class SearchScreen extends StatelessWidget {
@@ -195,7 +196,7 @@ class RecipeSearchDelegate extends SearchDelegate<String> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => RecipeDetailScreen(recipe: recipe),
+                    builder: (context) => RecipeDetailScreen(recipe: Recipe.fromJson(recipe)),
                   ),
                 );
               },

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/recipe_provider.dart';
 import 'recipe_detail_screen.dart';
+import '../models/recipe.dart';
 
 class FilteredRecipesListScreen extends StatefulWidget {
   final String filterType;
@@ -752,7 +753,7 @@ class _FilteredRecipesListScreenState extends State<FilteredRecipesListScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => RecipeDetailScreen(recipe: recipe),
+                  builder: (context) => RecipeDetailScreen(recipe: Recipe.fromJson(recipe)),
                 ),
               );
             },
@@ -1098,7 +1099,7 @@ class FilteredRecipesResultScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => RecipeDetailScreen(recipe: recipe),
+                  builder: (context) => RecipeDetailScreen(recipe: Recipe.fromJson(recipe)),
                 ),
               );
             },

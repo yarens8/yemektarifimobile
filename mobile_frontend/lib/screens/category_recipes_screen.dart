@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import '../services/api_service.dart';
+import '../models/recipe.dart';
 import 'recipe_detail_screen.dart';
 
 class CategoryRecipesScreen extends StatefulWidget {
@@ -105,7 +106,7 @@ class _CategoryRecipesScreenState extends State<CategoryRecipesScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => RecipeDetailScreen(recipe: recipe),
+              builder: (context) => RecipeDetailScreen(recipe: Recipe.fromJson(recipe)),
             ),
           );
         },
