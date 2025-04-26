@@ -88,13 +88,13 @@ class RecipeService {
           print('Response status code: ${response.statusCode}');
           if (response.statusCode == 200) {
             final responseBody = response.body;
-            print('Response body length: ${responseBody.length}');
+            print('Response body: $responseBody');
             
             if (responseBody.isEmpty) {
               throw Exception('Boş yanıt alındı');
             }
 
-            final data = json.decode(responseBody);
+            final Map<String, dynamic> data = json.decode(responseBody);
             return Recipe.fromJson(data);
           } else {
             final error = _parseError(response);

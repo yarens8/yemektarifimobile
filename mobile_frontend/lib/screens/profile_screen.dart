@@ -5,6 +5,7 @@ import 'auth/login_screen.dart';
 import 'edit_profile_screen.dart';
 import 'my_recipes_screen.dart';
 import 'favorite_recipes_screen.dart';
+import 'user_recipes_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -146,10 +147,18 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.restaurant_menu,
                 title: 'Tariflerim',
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const MyRecipesScreen()),
-                  );
+                  if (user != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UserRecipesScreen(userId: user.id),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Lütfen önce giriş yapın')),
+                    );
+                  }
                 },
               ),
               _buildProfileMenuItem(

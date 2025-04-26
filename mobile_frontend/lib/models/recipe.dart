@@ -41,18 +41,21 @@ class Recipe {
     if (json['image_filename'] != null && json['image_filename'].toString().isNotEmpty) {
       recipeImages.add(RecipeImage(
         id: 0,
-        imageUrl: 'assets/recipe_images/${json['image_filename']}'
+        imageUrl: json['image_filename']
       ));
     }
     
     if (json['images'] is List) {
       recipeImages.addAll(
         (json['images'] as List).map((image) {
-          String filename = image['url'] ?? image['image_url'] ?? image['imageUrl'] ?? '';
-          return RecipeImage(
-            id: image['id'] ?? 0,
-            imageUrl: 'assets/recipe_images/$filename'
-          );
+          if (image is Map) {
+            String filename = image['url'] ?? image['image_url'] ?? image['imageUrl'] ?? '';
+            return RecipeImage(
+              id: image['id'] ?? 0,
+              imageUrl: filename
+            );
+          }
+          return RecipeImage(id: 0, imageUrl: image.toString());
         }).toList()
       );
     }
@@ -79,12 +82,12 @@ class Recipe {
       favoriteCount: json['favorite_count'] ?? 0,
       commentCount: json['comment_count'] ?? 0,
       views: json['views'] ?? 0,
-      preparationTime: json['preparation_time'],
-      ingredients: json['ingredients'],
-      instructions: json['instructions'],
-      tips: json['tips'],
-      servingCount: json['serving_count'],
-      difficulty: json['difficulty'],
+      preparationTime: json['preparation_time']?.toString(),
+      ingredients: json['ingredients']?.toString(),
+      instructions: json['instructions']?.toString(),
+      tips: json['tips']?.toString(),
+      servingCount: json['serving_count'] is int ? json['serving_count'] : null,
+      difficulty: json['difficulty']?.toString(),
     );
   }
 

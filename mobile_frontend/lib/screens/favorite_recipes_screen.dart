@@ -4,6 +4,7 @@ import '../models/recipe.dart';
 import '../services/recipe_service.dart';
 import '../providers/user_provider.dart';
 import '../widgets/recipe_card.dart';
+import 'recipe_detail_screen.dart';
 
 class FavoriteRecipesScreen extends StatefulWidget {
   const FavoriteRecipesScreen({Key? key}) : super(key: key);
@@ -110,7 +111,144 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
                         padding: const EdgeInsets.all(8),
                         itemCount: _favoriteRecipes.length,
                         itemBuilder: (context, index) {
-                          return RecipeCard(recipe: _favoriteRecipes[index]);
+                          final recipe = _favoriteRecipes[index];
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.03),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(20),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => RecipeDetailScreen(recipe: recipe),
+                                    ),
+                                  );
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 90,
+                                        height: 90,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(15),
+                                          color: Colors.grey.shade50,
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(15),
+                                          child: recipe.images.isNotEmpty
+                                              ? Image.asset(
+                                                  'assets/recipe_images/${recipe.images.first.imageUrl}',
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    return Icon(
+                                                      Icons.restaurant_menu,
+                                                      color: Colors.grey.shade300,
+                                                      size: 35,
+                                                    );
+                                                  },
+                                                )
+                                              : Icon(
+                                                  Icons.restaurant_menu,
+                                                  color: Colors.grey.shade300,
+                                                  size: 35,
+                                                ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 18),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              recipe.title,
+                                              style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.person_outline,
+                                                  size: 18,
+                                                  color: Colors.grey.shade500,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  recipe.user.username,
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade600,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                                Container(
+                                                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                                                  width: 4,
+                                                  height: 4,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey.shade400,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                                Icon(
+                                                  Icons.timer_outlined,
+                                                  size: 18,
+                                                  color: Colors.grey.shade500,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '${recipe.preparationTime ?? "?"} dk',
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade600,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.visibility_outlined,
+                                                  size: 18,
+                                                  color: Colors.grey.shade500,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '${recipe.views} görüntülenme',
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade600,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
                         },
                       ),
                     ),

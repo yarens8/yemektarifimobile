@@ -75,61 +75,18 @@ class MyRecipesScreen extends StatelessWidget {
           }
 
           if (snapshot.hasError) {
-            print('Error in MyRecipesScreen: ${snapshot.error}');
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red.shade300,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Bir hata oluştu',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.red.shade700,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      snapshot.error.toString(),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.red.shade700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Sayfayı yenile
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const MyRecipesScreen()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade50,
-                      foregroundColor: Colors.red.shade700,
-                    ),
-                    child: const Text('Tekrar Dene'),
-                  ),
-                ],
+              child: Text(
+                'Bir hata oluştu: ${snapshot.error}',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 16,
+                ),
               ),
             );
           }
 
           final recipes = snapshot.data ?? [];
-          print('Loaded ${recipes.length} recipes:');
-          for (var recipe in recipes) {
-            print('Recipe: ${recipe.title} (ID: ${recipe.id}, Views: ${recipe.views})');
-          }
 
           if (recipes.isEmpty) {
             return Center(
@@ -145,24 +102,8 @@ class MyRecipesScreen extends StatelessWidget {
                   Text(
                     'Henüz tarif eklememişsiniz',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                       color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () {
-                      // TODO: Tarif ekleme sayfasına yönlendir
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.pink,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Tarif Ekle',
-                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ],
