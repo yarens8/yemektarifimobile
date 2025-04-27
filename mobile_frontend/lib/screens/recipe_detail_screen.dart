@@ -28,6 +28,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         _recipe = widget.recipe;
         _isLoading = false;
       });
+      if (_recipe!.images.isNotEmpty) {
+        print('Tarif: ${_recipe!.title}');
+        print('Resim dosya adı: ${_recipe!.images.first.imageUrl}');
+      }
     } else if (widget.recipeId != null) {
       _loadRecipeDetails();
     }
@@ -150,13 +154,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 children: [
                   // Tarif resmi
                   _recipe!.images.isNotEmpty
-                      ? Image.network(
-                          'http://10.0.2.2:5000/uploads/${_recipe!.images[0].imageUrl}',
+                      ? Image.asset(
+                          'assets/recipe_images/${_recipe!.images[0].imageUrl}',
                           width: double.infinity,
                           height: double.infinity,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             print('Resim yükleme hatası: $error');
+                            print('Yüklenmeye çalışılan resim: assets/recipe_images/${_recipe!.images[0].imageUrl}');
                             return Container(
                               color: Colors.orange.shade50,
                               child: Column(
@@ -247,7 +252,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             Text(
                               _recipe!.user.username,
                               style: const TextStyle(
-                                color: Colors.white,
+                        color: Colors.white,
                                 fontSize: 16,
                                 shadows: [
                                   Shadow(
@@ -261,10 +266,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           ],
                         ),
                       ],
+                      ),
                     ),
-                  ),
                 ],
-              ),
+                  ),
             ),
             leading: Container(
               margin: const EdgeInsets.all(8),
@@ -275,9 +280,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               child: IconButton(
                 icon: const Icon(Icons.arrow_back_ios, size: 20),
                 color: Colors.black87,
-                onPressed: () => Navigator.pop(context),
-              ),
+              onPressed: () => Navigator.pop(context),
             ),
+          ),
             actions: [
               Container(
                 margin: const EdgeInsets.all(8),
@@ -338,10 +343,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             label: '${_recipe!.views} Görüntülenme',
                             color: Colors.purple,
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
+                ],
+              ),
+            ),
+          ),
 
                   const Divider(),
 
@@ -350,19 +355,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
                               Icon(Icons.shopping_basket, color: Colors.orange.shade700),
                               const SizedBox(width: 8),
-                              const Text(
-                                'Malzemeler',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+        const Text(
+          'Malzemeler',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -400,8 +405,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                                 ),
                                                 softWrap: true,
                                               ),
-                                            ),
-                                          ],
+        ),
+      ],
                                         ),
                                       ))
                                   .toList(),
@@ -418,19 +423,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
                           Row(
                             children: [
                               Icon(Icons.restaurant_menu, color: Colors.green.shade700),
                               const SizedBox(width: 8),
-                              const Text(
+        const Text(
                                 'Hazırlanış',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -460,8 +465,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                                   height: 1.5,
                                                 ),
                                               ),
-                                            ),
-                                          ],
+        ),
+      ],
                                         ),
                                       ))
                                   .toList(),
@@ -478,29 +483,29 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
                           Row(
                             children: [
                               Icon(Icons.lightbulb, color: Colors.amber.shade700),
                               const SizedBox(width: 8),
-                              const Text(
+        const Text(
                                 'İpuçları',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
                               color: Colors.amber.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
                               _recipe!.tips!,
                               style: const TextStyle(
                                 fontSize: 16,
@@ -550,9 +555,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               color: textColor,
               fontWeight: FontWeight.w500,
               fontSize: 14,
-            ),
           ),
-        ],
+        ),
+      ],
       ),
     );
   }

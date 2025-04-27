@@ -45,6 +45,13 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
           _favoriteRecipes = recipes;
           _isLoading = false;
         });
+        // Tüm tariflerin resim adlarını yazdır
+        for (var recipe in recipes) {
+          if (recipe.images.isNotEmpty) {
+            print('Tarif: ${recipe.title}');
+            print('Backend resim adı: ${recipe.images.first.imageUrl}');
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -152,9 +159,11 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
                                           borderRadius: BorderRadius.circular(15),
                                           child: recipe.images.isNotEmpty
                                               ? Image.asset(
-                                                  'assets/recipe_images/${recipe.images.first.imageUrl}',
+                                                  'assets/recipe_images/${recipe.images.first.imageUrl.split('/').last}',
                                                   fit: BoxFit.cover,
                                                   errorBuilder: (context, error, stackTrace) {
+                                                    print('Resim yükleme hatası: $error');
+                                                    print('Yüklenmeye çalışılan resim: assets/recipe_images/${recipe.images.first.imageUrl.split('/').last}');
                                                     return Icon(
                                                       Icons.restaurant_menu,
                                                       color: Colors.grey.shade300,

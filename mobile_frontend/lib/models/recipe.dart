@@ -39,23 +39,26 @@ class Recipe {
     List<RecipeImage> recipeImages = [];
     
     if (json['image_filename'] != null && json['image_filename'].toString().isNotEmpty) {
+      print('Tarif başlığı: ${json['title']}');
+      print('Image filename: ${json['image_filename']}');
       recipeImages.add(RecipeImage(
         id: 0,
-        imageUrl: json['image_filename']
+        imageUrl: json['image_filename'].toString().split('/').last
       ));
     }
     
     if (json['images'] is List) {
+      print('Images listesi: ${json['images']}');
       recipeImages.addAll(
         (json['images'] as List).map((image) {
           if (image is Map) {
             String filename = image['url'] ?? image['image_url'] ?? image['imageUrl'] ?? '';
             return RecipeImage(
               id: image['id'] ?? 0,
-              imageUrl: filename
+              imageUrl: filename.split('/').last
             );
           }
-          return RecipeImage(id: 0, imageUrl: image.toString());
+          return RecipeImage(id: 0, imageUrl: image.toString().split('/').last);
         }).toList()
       );
     }
