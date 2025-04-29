@@ -154,15 +154,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 children: [
                   // Tarif resmi
                   _recipe!.images.isNotEmpty
-                      ? Image.asset(
+                ? Image.asset(
                           'assets/recipe_images/${_recipe!.images[0].imageUrl}',
                           width: double.infinity,
                           height: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
                             print('Resim yükleme hatası: $error');
                             print('Yüklenmeye çalışılan resim: assets/recipe_images/${_recipe!.images[0].imageUrl}');
-                            return Container(
+                      return Container(
                               color: Colors.orange.shade50,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -177,14 +177,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     'Resim yüklenemedi',
                                     style: TextStyle(
                                       color: Colors.orange.shade700,
-                                    ),
+                          ),
                                   ),
                                 ],
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
+                        ),
+                      );
+                    },
+                  )
+                : Container(
                           color: Colors.orange.shade50,
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,

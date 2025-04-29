@@ -4,7 +4,7 @@ import '../models/recipe.dart';
 
 class RecipeService {
   // API'nin base URL'i
-  static const String baseUrl = 'http://192.168.1.107:5000/api';
+  static const String baseUrl = 'http://10.0.2.2:5000/api';
   static const int maxRetries = 3;
   static const Duration timeout = Duration(seconds: 10);
 
@@ -203,29 +203,63 @@ class RecipeService {
   }
 
   Future<List<Recipe>> getUserFavorites(int userId) async {
-    try {
-      final uri = Uri.parse('$baseUrl/favorites').replace(
-        queryParameters: {
-          'user_id': userId.toString(),
-        },
-      );
+    print('Fetching favorite recipes for userId: $userId');
+    int retryCount = 0;
+    Exception? lastError;
+    
+    while (retryCount < maxRetries) {
+      try {
+        final uri = Uri.parse('$baseUrl/favorites').replace(
+          queryParameters: {
+            'user_id': userId.toString(),
+          },
+        );
+        print('Attempt ${retryCount + 1}: Request URL: $uri');
 
-      final response = await http.get(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
+        final client = http.Client();
+        try {
+          final response = await client.get(
+            uri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Connection': 'keep-alive',
+            },
+          ).timeout(timeout);
 
-      if (response.statusCode == 200) {
-        final body = json.decode(response.body);
-        final List<dynamic> data = body['recipes'] ?? [];
-        return data.map((json) => Recipe.fromJson(json)).toList();
+          print('Response status code: ${response.statusCode}');
+          if (response.statusCode == 200) {
+            final responseBody = response.body;
+            print('Response body length: ${responseBody.length}');
+            
+            if (responseBody.isEmpty) {
+              return [];
+            }
+
+            final Map<String, dynamic> data = json.decode(responseBody);
+            final List<dynamic> recipes = data['recipes'] ?? [];
+            return recipes.map((json) => Recipe.fromJson(json)).toList();
+          } else {
+            final error = _parseError(response);
+            throw Exception(error);
+          }
+        } finally {
+          client.close();
+        }
+      } catch (e) {
+        print('Error in attempt ${retryCount + 1}: $e');
+        lastError = e is Exception ? e : Exception(e.toString());
+        
+        if (retryCount < maxRetries - 1) {
+          retryCount++;
+          await Future.delayed(Duration(seconds: retryCount * 2));
+          continue;
+        }
+        break;
       }
-      return [];
-    } catch (e) {
-      return [];
     }
+    
+    throw lastError ?? Exception('Bağlantı hatası: Sunucuya ulaşılamıyor');
   }
 
   Future<List<Recipe>> getFavoriteRecipes() async {
