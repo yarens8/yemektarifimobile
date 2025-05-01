@@ -374,6 +374,31 @@ class _HomeScreenState extends State<HomeScreen> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if ((recipe['average_rating'] ?? 0) > 0) ...[
+                          Icon(
+                            Icons.star,
+                            size: 14,
+                            color: Colors.amber,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            (recipe['average_rating'] ?? 0.0).toStringAsFixed(1),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '(${recipe['rating_count'] ?? 0})',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
                         Icon(
                           Icons.remove_red_eye_outlined,
                           size: 14,

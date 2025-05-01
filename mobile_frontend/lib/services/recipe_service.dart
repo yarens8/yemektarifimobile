@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/recipe.dart';
+import '../models/comment.dart';
 import '../config/api_config.dart';
 
 class RecipeService {
@@ -398,6 +399,88 @@ class RecipeService {
     } catch (e) {
       print('Error getting user rating: $e');
       return null;
+    }
+  }
+
+  // Yorum işlemleri için fonksiyonlar
+  Future<List<Comment>> getRecipeComments(int recipeId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/recipes/$recipeId/comments'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => Comment.fromJson(json)).toList();
+      } else {
+        throw Exception('Yorumlar alınamadı');
+      }
+    } catch (e) {
+      throw Exception('Yorumlar alınırken bir hata oluştu: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> addComment({
+    required int recipeId,
+    required int userId,
+    required String content,
+  }) async {
+    try {
+      print('Adding comment with data: recipeId=$recipeId, userId=$userId, content=$content');
+      final response = await http.post(
+        Uri.parse('$baseUrl/recipes/$recipeId/comments'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
+          'user_id': userId,
+          'content': content,
+        }),
+      );
+
+      print('Comment add response status: ${response.statusCode}');
+      print('Comment add response body: ${response.body}');
+
+      if (response.statusCode == 201) {
+        final data = json.decode(response.body);
+        return {
+          'id': data['id'],
+          'content': content,
+          'user_id': userId,
+          'recipe_id': recipeId,
+          'created_at': DateTime.now().toIso8601String(),
+          'username': data['username'],
+        };
+      } else {
+        print('Comment add failed with status: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Error adding comment: $e');
+      return null;
+    }
+  }
+
+  Future<bool> deleteComment(int commentId, int userId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/comments/$commentId'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'user_id': userId,
+        }),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      throw Exception('Yorum silinirken bir hata oluştu: $e');
     }
   }
 } 

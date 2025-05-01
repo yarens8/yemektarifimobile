@@ -48,7 +48,22 @@ class RecipeProvider extends ChangeNotifier {
         if (!_recipesByCategory.containsKey(categoryId)) {
           _recipesByCategory[categoryId] = [];
         }
-        _recipesByCategory[categoryId]!.add(recipe);
+        
+        // Mevcut tarif varsa, puanlama bilgilerini koru
+        final existingRecipeIndex = _recipesByCategory[categoryId]!
+            .indexWhere((r) => r['id'] == recipe['id']);
+            
+        if (existingRecipeIndex != -1) {
+          // Mevcut tarifi güncelle ama puanlama bilgilerini koru
+          final existingRecipe = _recipesByCategory[categoryId]![existingRecipeIndex];
+          recipe['average_rating'] = recipe['average_rating'] ?? existingRecipe['average_rating'];
+          recipe['rating_count'] = recipe['rating_count'] ?? existingRecipe['rating_count'];
+          recipe['user_rating'] = recipe['user_rating'] ?? existingRecipe['user_rating'];
+          _recipesByCategory[categoryId]![existingRecipeIndex] = recipe;
+        } else {
+          // Yeni tarif ekle
+          _recipesByCategory[categoryId]!.add(recipe);
+        }
       }
 
       _isLoading = false;
@@ -81,6 +96,24 @@ class RecipeProvider extends ChangeNotifier {
       return await _apiService.searchRecipes(query);
     } catch (e) {
       rethrow;
+    }
+  }
+
+  // Tarif puanlandıktan sonra tarifleri güncelle
+  Future<void> updateRecipeRating(int recipeId, double averageRating, int ratingCount) async {
+    try {
+      // Tüm kategorilerdeki tarifleri kontrol et ve güncelle
+      _recipesByCategory.forEach((categoryId, recipes) {
+        for (var i = 0; i < recipes.length; i++) {
+          if (recipes[i]['id'] == recipeId) {
+            recipes[i]['average_rating'] = averageRating;
+            recipes[i]['rating_count'] = ratingCount;
+          }
+        }
+      });
+      notifyListeners();
+    } catch (e) {
+      print('Error updating recipe rating: $e');
     }
   }
 } 

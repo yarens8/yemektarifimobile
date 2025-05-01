@@ -86,6 +86,31 @@ class RecipeCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
+                        if (recipe.averageRating > 0) ...[
+                          Icon(
+                            Icons.star,
+                            size: 16,
+                            color: Colors.amber,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            recipe.averageRating.toStringAsFixed(1),
+                            style: TextStyle(
+                              color: Colors.grey[800],
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '(${recipe.ratingCount})',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
                         Icon(
                           Icons.timer_outlined,
                           size: 16,

@@ -186,6 +186,31 @@ class _CategoryRecipesScreenState extends State<CategoryRecipesScreen> {
                           color: Colors.grey[600],
                         ),
                       ),
+                      if ((recipe['average_rating'] ?? 0) > 0) ...[
+                        const SizedBox(width: 16),
+                        Icon(
+                          Icons.star,
+                          size: 16,
+                          color: Colors.amber,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          (recipe['average_rating'] ?? 0.0).toStringAsFixed(1),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '(${recipe['rating_count'] ?? 0})',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 8),

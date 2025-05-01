@@ -336,14 +336,65 @@ def get_user_rating(recipe_id):
     try:
         user_id = request.args.get('user_id')
         if not user_id:
-            return jsonify({'error': 'Kullanıcı ID gereklidir'}), 400
+            return jsonify({'error': 'Kullanıcı ID gerekli'}), 400
 
         rating = db_service.get_user_rating(recipe_id, int(user_id))
-        return jsonify({'rating': rating}), 200
+        return jsonify({'rating': rating})
 
     except Exception as e:
         print(f"Error getting user rating: {str(e)}")
         return jsonify({'error': 'Kullanıcı puanı alınırken bir hata oluştu'}), 500
+
+@app.route('/api/recipes/<int:recipe_id>/comments', methods=['GET'])
+def get_recipe_comments(recipe_id):
+    """Tarife ait yorumları getirir"""
+    try:
+        comments = db_service.get_recipe_comments(recipe_id)
+        return jsonify(comments)
+    except Exception as e:
+        print(f"Error getting recipe comments: {str(e)}")
+        return jsonify({'error': 'Yorumlar alınırken bir hata oluştu'}), 500
+
+@app.route('/api/recipes/<int:recipe_id>/comments', methods=['POST'])
+def add_comment(recipe_id):
+    """Tarife yorum ekler"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        content = data.get('content')
+
+        if not user_id or not content:
+            return jsonify({'error': 'Kullanıcı ID ve yorum içeriği gerekli'}), 400
+
+        comment = db_service.add_comment(recipe_id, user_id, content)
+        if comment:
+            return jsonify(comment), 201
+        else:
+            return jsonify({'error': 'Yorum eklenirken bir hata oluştu'}), 500
+
+    except Exception as e:
+        print(f"Error adding comment: {str(e)}")
+        return jsonify({'error': 'Yorum eklenirken bir hata oluştu'}), 500
+
+@app.route('/api/comments/<int:comment_id>', methods=['DELETE'])
+def delete_comment(comment_id):
+    """Yorumu siler"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+
+        if not user_id:
+            return jsonify({'error': 'Kullanıcı ID gerekli'}), 400
+
+        success, message = db_service.delete_comment(comment_id, user_id)
+        if success:
+            return jsonify({'message': message}), 200
+        else:
+            return jsonify({'error': message}), 403
+
+    except Exception as e:
+        print(f"Error deleting comment: {str(e)}")
+        return jsonify({'error': 'Yorum silinirken bir hata oluştu'}), 500
 
 if __name__ == '__main__':
     try:

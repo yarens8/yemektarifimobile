@@ -63,46 +63,50 @@ class DatabaseService:
                 if category_id:
                     query = """
                         SELECT 
-                            [id],
-                            [title],
-                            [ingredients],
-                            [instructions],
-                            [created_at],
-                            [user_id],
-                            [category_id],
-                            [views],
-                            [serving_size],
-                            [preparation_time],
-                            [cooking_time],
-                            [tips],
-                            [image_filename],
-                            [ingredients_sections],
-                            [username]
-                        FROM [dbo].[Recipe]
-                        WHERE [category_id] = ?
-                        ORDER BY [views] DESC
+                            r.[id],
+                            r.[title],
+                            r.[ingredients],
+                            r.[instructions],
+                            r.[created_at],
+                            r.[user_id],
+                            r.[category_id],
+                            r.[views],
+                            r.[serving_size],
+                            r.[preparation_time],
+                            r.[cooking_time],
+                            r.[tips],
+                            r.[image_filename],
+                            r.[ingredients_sections],
+                            r.[username],
+                            r.[average_rating],
+                            r.[rating_count]
+                        FROM [dbo].[Recipe] r
+                        WHERE r.[category_id] = ?
+                        ORDER BY r.[views] DESC
                     """
                     cursor.execute(query, category_id)
                 else:
                     query = """
                         SELECT 
-                            [id],
-                            [title],
-                            [ingredients],
-                            [instructions],
-                            [created_at],
-                            [user_id],
-                            [category_id],
-                            [views],
-                            [serving_size],
-                            [preparation_time],
-                            [cooking_time],
-                            [tips],
-                            [image_filename],
-                            [ingredients_sections],
-                            [username]
-                        FROM [dbo].[Recipe]
-                        ORDER BY [views] DESC
+                            r.[id],
+                            r.[title],
+                            r.[ingredients],
+                            r.[instructions],
+                            r.[created_at],
+                            r.[user_id],
+                            r.[category_id],
+                            r.[views],
+                            r.[serving_size],
+                            r.[preparation_time],
+                            r.[cooking_time],
+                            r.[tips],
+                            r.[image_filename],
+                            r.[ingredients_sections],
+                            r.[username],
+                            r.[average_rating],
+                            r.[rating_count]
+                        FROM [dbo].[Recipe] r
+                        ORDER BY r.[views] DESC
                     """
                     cursor.execute(query)
                 
@@ -122,24 +126,26 @@ class DatabaseService:
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT 
-                        [id],
-                        [title],
-                        [ingredients],
-                        [instructions],
-                        [created_at],
-                        [user_id],
-                        [category_id],
-                        [views],
-                        [serving_size],
-                        [preparation_time],
-                        [cooking_time],
-                        [tips],
-                        [image_filename],
-                        [ingredients_sections],
-                        [username]
-                    FROM [dbo].[Recipe]
-                    WHERE [title] LIKE ? OR [ingredients] LIKE ? OR [instructions] LIKE ?
-                    ORDER BY [views] DESC
+                        r.[id],
+                        r.[title],
+                        r.[ingredients],
+                        r.[instructions],
+                        r.[created_at],
+                        r.[user_id],
+                        r.[category_id],
+                        r.[views],
+                        r.[serving_size],
+                        r.[preparation_time],
+                        r.[cooking_time],
+                        r.[tips],
+                        r.[image_filename],
+                        r.[ingredients_sections],
+                        r.[username],
+                        r.[average_rating],
+                        r.[rating_count]
+                    FROM [dbo].[Recipe] r
+                    WHERE r.[title] LIKE ? OR r.[ingredients] LIKE ? OR r.[instructions] LIKE ?
+                    ORDER BY r.[views] DESC
                 """, f"%{search_term}%", f"%{search_term}%", f"%{search_term}%")
                 columns = [column[0] for column in cursor.description]
                 recipes = [dict(zip(columns, row)) for row in cursor.fetchall()]
@@ -155,23 +161,25 @@ class DatabaseService:
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT TOP 10
-                        [id],
-                        [title],
-                        [ingredients],
-                        [instructions],
-                        [created_at],
-                        [user_id],
-                        [category_id],
-                        [views],
-                        [serving_size],
-                        [preparation_time],
-                        [cooking_time],
-                        [tips],
-                        [image_filename],
-                        [ingredients_sections],
-                        [username]
-                    FROM [dbo].[Recipe]
-                    ORDER BY [views] DESC
+                        r.[id],
+                        r.[title],
+                        r.[ingredients],
+                        r.[instructions],
+                        r.[created_at],
+                        r.[user_id],
+                        r.[category_id],
+                        r.[views],
+                        r.[serving_size],
+                        r.[preparation_time],
+                        r.[cooking_time],
+                        r.[tips],
+                        r.[image_filename],
+                        r.[ingredients_sections],
+                        r.[username],
+                        r.[average_rating],
+                        r.[rating_count]
+                    FROM [dbo].[Recipe] r
+                    ORDER BY r.[views] DESC
                 """)
                 columns = [column[0] for column in cursor.description]
                 recipes = [dict(zip(columns, row)) for row in cursor.fetchall()]
@@ -187,24 +195,26 @@ class DatabaseService:
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT 
-                        [id],
-                        [title],
-                        [ingredients],
-                        [instructions],
-                        [created_at],
-                        [user_id],
-                        [category_id],
-                        [views],
-                        [serving_size],
-                        [preparation_time],
-                        [cooking_time],
-                        [tips],
-                        [image_filename],
-                        [ingredients_sections],
-                        [username]
-                    FROM [dbo].[Recipe]
-                    WHERE [category_id] = ?
-                    ORDER BY [views] DESC
+                        r.[id],
+                        r.[title],
+                        r.[ingredients],
+                        r.[instructions],
+                        r.[created_at],
+                        r.[user_id],
+                        r.[category_id],
+                        r.[views],
+                        r.[serving_size],
+                        r.[preparation_time],
+                        r.[cooking_time],
+                        r.[tips],
+                        r.[image_filename],
+                        r.[ingredients_sections],
+                        r.[username],
+                        r.[average_rating],
+                        r.[rating_count]
+                    FROM [dbo].[Recipe] r
+                    WHERE r.[category_id] = ?
+                    ORDER BY r.[views] DESC
                 """, category_id)
                 columns = [column[0] for column in cursor.description]
                 recipes = [dict(zip(columns, row)) for row in cursor.fetchall()]
@@ -691,6 +701,105 @@ class DatabaseService:
         except Exception as e:
             print(f"Error in get_user_rating: {str(e)}")
             return None
+
+    def add_comment(self, recipe_id, user_id, content):
+        """Tarife yorum ekler"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Yorumu ekle
+                cursor.execute("""
+                    INSERT INTO [dbo].[Comment] (recipe_id, user_id, content, created_at)
+                    VALUES (?, ?, ?, GETDATE());
+                    SELECT SCOPE_IDENTITY() as id;
+                """, (recipe_id, user_id, content))
+                
+                comment_id = cursor.fetchone()[0]
+                
+                # Eklenen yorumu getir
+                cursor.execute("""
+                    SELECT c.id, c.content, c.created_at, c.user_id, c.recipe_id, u.username
+                    FROM [dbo].[Comment] c
+                    INNER JOIN [dbo].[User] u ON c.user_id = u.id
+                    WHERE c.id = ?
+                """, comment_id)
+                
+                result = cursor.fetchone()
+                conn.commit()
+                
+                if result:
+                    return {
+                        'id': result[0],
+                        'content': result[1],
+                        'created_at': result[2].isoformat() if result[2] else None,
+                        'user_id': result[3],
+                        'recipe_id': result[4],
+                        'username': result[5]
+                    }
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Yorum eklenirken hata: {str(e)}")
+            return None
+
+    def get_recipe_comments(self, recipe_id):
+        """Tarife ait yorumları getirir"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT c.id, c.content, c.created_at, c.user_id, c.recipe_id, u.username
+                    FROM [dbo].[Comment] c
+                    INNER JOIN [dbo].[User] u ON c.user_id = u.id
+                    WHERE c.recipe_id = ?
+                    ORDER BY c.created_at DESC
+                """, recipe_id)
+                
+                comments = []
+                for row in cursor.fetchall():
+                    comment = {
+                        'id': row[0],
+                        'content': row[1],
+                        'created_at': row[2].isoformat() if row[2] else None,
+                        'user_id': row[3],
+                        'recipe_id': row[4],
+                        'username': row[5]
+                    }
+                    comments.append(comment)
+                return comments
+                
+        except Exception as e:
+            self.logger.error(f"Yorumlar getirilirken hata: {str(e)}")
+            return []
+
+    def delete_comment(self, comment_id, user_id):
+        """Kullanıcının yorumunu siler"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Önce yorumun bu kullanıcıya ait olup olmadığını kontrol et
+                cursor.execute("""
+                    SELECT COUNT(*) FROM [dbo].[Comment]
+                    WHERE id = ? AND user_id = ?
+                """, (comment_id, user_id))
+                
+                if cursor.fetchone()[0] == 0:
+                    return False, "Bu yorumu silme yetkiniz yok"
+                
+                # Yorumu sil
+                cursor.execute("""
+                    DELETE FROM [dbo].[Comment]
+                    WHERE id = ? AND user_id = ?
+                """, (comment_id, user_id))
+                
+                conn.commit()
+                return True, "Yorum başarıyla silindi"
+                
+        except Exception as e:
+            self.logger.error(f"Yorum silinirken hata: {str(e)}")
+            return False, f"Yorum silinirken hata oluştu: {str(e)}"
 
 # Singleton instance
 db_service = DatabaseService() 
