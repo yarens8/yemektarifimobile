@@ -19,6 +19,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   bool _isLoading = true;
   final RecipeService _recipeService = RecipeService();
   bool _isFavoriting = false;
+  bool _isRating = false;
 
   @override
   void initState() {
@@ -32,8 +33,51 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         print('Tarif: ${_recipe!.title}');
         print('Resim dosya adı: ${_recipe!.imageUrl}');
       }
+      _loadUserRating();
     } else if (widget.recipeId != null) {
       _loadRecipeDetails();
+    }
+  }
+
+  Future<void> _loadUserRating() async {
+    final user = context.read<UserProvider>().currentUser;
+    if (user != null && _recipe != null) {
+      try {
+        final rating = await _recipeService.getUserRating(
+          recipeId: _recipe!.id,
+          userId: user.id,
+        );
+        if (mounted && rating != null) {
+          setState(() {
+            _recipe = Recipe(
+              id: _recipe!.id,
+              title: _recipe!.title,
+              description: _recipe!.description,
+              imageUrl: _recipe!.imageUrl,
+              images: _recipe!.images,
+              userId: _recipe!.userId,
+              username: _recipe!.username,
+              categoryId: _recipe!.categoryId,
+              isFavorited: _recipe!.isFavorited,
+              favoriteCount: _recipe!.favoriteCount,
+              commentCount: _recipe!.commentCount,
+              views: _recipe!.views,
+              cookingTime: _recipe!.cookingTime,
+              ingredients: _recipe!.ingredients,
+              instructions: _recipe!.instructions,
+              tips: _recipe!.tips,
+              servingSize: _recipe!.servingSize,
+              difficulty: _recipe!.difficulty,
+              createdAt: _recipe!.createdAt,
+              averageRating: _recipe!.averageRating,
+              ratingCount: _recipe!.ratingCount,
+              userRating: rating,
+            );
+          });
+        }
+      } catch (e) {
+        print('Error loading user rating: $e');
+      }
     }
   }
 
@@ -46,6 +90,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             _recipe = loadedRecipe;
             _isLoading = false;
           });
+          _loadUserRating();
         }
       }
     } catch (e) {
@@ -102,7 +147,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               favoriteCount: recipe.favoriteCount + (recipe.isFavorited ? -1 : 1),
               commentCount: recipe.commentCount,
               views: recipe.views,
-              preparationTime: recipe.preparationTime,
               cookingTime: recipe.cookingTime,
               ingredients: recipe.ingredients,
               instructions: recipe.instructions,
@@ -123,6 +167,67 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     } finally {
       if (mounted) {
         setState(() => _isFavoriting = false);
+      }
+    }
+  }
+
+  Future<void> _rateRecipe(int rating) async {
+    final user = context.read<UserProvider>().currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Puan vermek için giriş yapmalısınız')),
+      );
+      return;
+    }
+
+    setState(() => _isRating = true);
+    try {
+      final result = await _recipeService.rateRecipe(
+        recipeId: _recipe!.id,
+        userId: user.id,
+        rating: rating,
+      );
+
+      if (mounted) {
+        if (result['success']) {
+          setState(() {
+            _recipe = Recipe(
+              id: _recipe!.id,
+              title: _recipe!.title,
+              description: _recipe!.description,
+              imageUrl: _recipe!.imageUrl,
+              images: _recipe!.images,
+              userId: _recipe!.userId,
+              username: _recipe!.username,
+              categoryId: _recipe!.categoryId,
+              isFavorited: _recipe!.isFavorited,
+              favoriteCount: _recipe!.favoriteCount,
+              commentCount: _recipe!.commentCount,
+              views: _recipe!.views,
+              cookingTime: _recipe!.cookingTime,
+              ingredients: _recipe!.ingredients,
+              instructions: _recipe!.instructions,
+              tips: _recipe!.tips,
+              servingSize: _recipe!.servingSize,
+              difficulty: _recipe!.difficulty,
+              createdAt: _recipe!.createdAt,
+              averageRating: result['average_rating'],
+              ratingCount: result['rating_count'],
+              userRating: rating,
+            );
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'])),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'])),
+          );
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRating = false);
       }
     }
   }
@@ -337,7 +442,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         children: [
                           _buildStatItem(
                             icon: Icons.timer,
-                            label: _recipe!.preparationTime ?? 'Belirtilmemiş',
+                            label: _recipe!.cookingTime ?? 'Belirtilmemiş',
                             color: Colors.blue,
                           ),
                           const SizedBox(width: 8),
@@ -352,10 +457,84 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             label: '${_recipe!.views} Görüntülenme',
                             color: Colors.purple,
                           ),
-                ],
-              ),
-            ),
-          ),
+                          const SizedBox(width: 8),
+                          _buildStatItem(
+                            icon: Icons.star,
+                            label: '${_recipe!.averageRating.toStringAsFixed(1)} (${_recipe!.ratingCount})',
+                            color: Colors.amber,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Puan Verme
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.star, size: 18, color: Colors.amber.shade700),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Puan Ver:',
+                                  style: TextStyle(
+                                    color: Colors.amber.shade700,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: List.generate(5, (index) {
+                                    final rating = index + 1;
+                                    return GestureDetector(
+                                      onTap: _isRating ? null : () => _rateRecipe(rating),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                                        child: Icon(
+                                          rating <= (_recipe!.userRating ?? 0)
+                                              ? Icons.star_rounded
+                                              : Icons.star_outline_rounded,
+                                          size: 20,
+                                          color: rating <= (_recipe!.userRating ?? 0)
+                                              ? Colors.amber.shade700
+                                              : Colors.amber.shade300,
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                ),
+                                if (_recipe!.userRating != null) ...[
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '(Puanınız: ${_recipe!.userRating})',
+                                    style: TextStyle(
+                                      color: Colors.amber.shade700,
+                                      fontSize: 12,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                   const Divider(),
 
@@ -568,6 +747,142 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         ),
       ],
       ),
+    );
+  }
+
+  Widget _buildRatingStatItem({
+    required double rating,
+    required int ratingCount,
+    int? userRating,
+    Function(int)? onRatingChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: IntrinsicWidth(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.star, size: 18, color: Colors.amber.shade700),
+            const SizedBox(width: 6),
+            Text(
+              '${rating.toStringAsFixed(1)} ($ratingCount)',
+              style: TextStyle(
+                color: Colors.amber.shade700,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+            ),
+            if (onRatingChanged != null) ...[
+              const SizedBox(width: 8),
+              Container(
+                height: 20,
+                width: 1,
+                color: Colors.amber.withOpacity(0.3),
+              ),
+              const SizedBox(width: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(5, (index) {
+                  final currentRating = index + 1;
+                  return GestureDetector(
+                    onTap: () => onRatingChanged(currentRating),
+                    child: Icon(
+                      currentRating <= (userRating ?? 0)
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
+                      size: 16,
+                      color: currentRating <= (userRating ?? 0)
+                          ? Colors.amber.shade700
+                          : Colors.amber.shade300,
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimeSection() {
+    return _buildInfoSection(
+      icon: Icons.timer_outlined,
+      title: 'Pişirme Süresi',
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildTimeRow(
+            label: _recipe!.cookingTime ?? 'Belirtilmemiş',
+            unit: 'dakika',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoSection({
+    required IconData icon,
+    required String title,
+    required Widget content,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.grey[600]),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeRow({
+    required String label,
+    required String unit,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.grey[700],
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          unit,
+          style: TextStyle(
+            color: Colors.grey[700],
+            fontSize: 16,
+          ),
+        ),
+      ],
     );
   }
 }

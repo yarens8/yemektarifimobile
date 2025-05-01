@@ -16,7 +16,6 @@ class Recipe {
   final int favoriteCount;
   final int commentCount;
   final int views;
-  final String? preparationTime;
   final String? cookingTime;
   final String? ingredients;
   final String? instructions;
@@ -41,7 +40,6 @@ class Recipe {
     this.favoriteCount = 0,
     this.commentCount = 0,
     this.views = 0,
-    this.preparationTime,
     this.cookingTime,
     this.ingredients,
     this.instructions,
@@ -60,50 +58,44 @@ class Recipe {
       try {
         parsedDate = DateTime.parse(json['created_at']);
       } catch (e) {
-        try {
-          parsedDate = HttpDate.parse(json['created_at']);
-        } catch (e) {
-          try {
-            final dateStr = json['created_at'].toString();
-            if (dateStr.contains('GMT')) {
-              final formatter = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", 'en_US');
-              parsedDate = formatter.parse(dateStr);
-            } else {
-              parsedDate = DateFormat("yyyy-MM-dd HH:mm:ss").parse(dateStr);
-            }
-          } catch (e) {
-            print('Tarih ayrıştırma hatası: ${e.toString()}');
-            print('Ayrıştırılamayan tarih: ${json['created_at']}');
-            parsedDate = null;
-          }
-        }
+        print('Date parsing error: $e');
       }
+    }
+
+    // Decimal değerleri float'a dönüştür
+    double parseDecimal(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is int) return value.toDouble();
+      if (value is double) return value;
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
     }
 
     return Recipe(
       id: json['id'] ?? 0,
       title: json['title'] ?? '',
       description: json['description'],
-      imageUrl: json['image_filename'] ?? '',
-      images: [],
+      imageUrl: json['image_filename'],
+      images: (json['images'] as List<dynamic>?)
+              ?.map((image) => RecipeImage.fromJson(image))
+              ?.toList() ?? [],
       userId: json['user_id'] ?? 0,
       username: json['username'] ?? '',
       categoryId: json['category_id'] ?? 0,
-      views: json['views'] ?? 0,
-      preparationTime: json['preparation_time']?.toString(),
+      isFavorited: json['is_favorited'] ?? false,
+      favoriteCount: parseDecimal(json['favorite_count']).toInt(),
+      commentCount: parseDecimal(json['comment_count']).toInt(),
+      views: parseDecimal(json['views']).toInt(),
       cookingTime: json['cooking_time']?.toString(),
       ingredients: json['ingredients'],
       instructions: json['instructions'],
       tips: json['tips'],
-      servingSize: json['serving_size']?.toString(),
+      servingSize: json['servings']?.toString(),
       difficulty: json['difficulty'],
       createdAt: parsedDate,
-      isFavorited: json['is_favorited'] ?? false,
-      favoriteCount: json['favorite_count'] ?? 0,
-      commentCount: json['comment_count'] ?? 0,
-      averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0.0,
-      ratingCount: json['rating_count'] ?? 0,
-      userRating: json['user_rating'],
+      averageRating: parseDecimal(json['average_rating']),
+      ratingCount: parseDecimal(json['rating_count']).toInt(),
+      userRating: json['user_rating'] != null ? parseDecimal(json['user_rating']).toInt() : null,
     );
   }
 
@@ -117,7 +109,6 @@ class Recipe {
       'username': username,
       'category_id': categoryId,
       'views': views,
-      'preparation_time': preparationTime,
       'cooking_time': cookingTime,
       'ingredients': ingredients,
       'instructions': instructions,

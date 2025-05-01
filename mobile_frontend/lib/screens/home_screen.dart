@@ -263,16 +263,15 @@ class _HomeScreenState extends State<HomeScreen> {
             MaterialPageRoute(
               builder: (context) => RecipeDetailScreen(
                 recipe: Recipe(
-                  id: recipe['id'] ?? 0,
-                  title: recipe['title'] ?? '',
+                  id: recipe['id'],
+                  title: recipe['title'],
                   description: recipe['description'],
                   imageUrl: recipe['image_filename'],
                   images: [],
-                  userId: recipe['user_id'] ?? 0,
+                  userId: recipe['user_id'],
                   username: recipe['username'] ?? '',
-                  categoryId: recipe['category_id'] ?? 0,
+                  categoryId: recipe['category_id'],
                   views: recipe['views'] ?? 0,
-                  preparationTime: recipe['preparation_time']?.toString(),
                   cookingTime: recipe['cooking_time']?.toString(),
                   ingredients: recipe['ingredients'],
                   instructions: recipe['instructions'],
@@ -541,7 +540,13 @@ class RecipeSearchDelegate extends SearchDelegate<String> {
                 child: Icon(Icons.restaurant, color: Colors.grey.shade400),
               ),
               title: Text(recipe['title'] ?? ''),
-              subtitle: Text(recipe['preparation_time'] ?? ''),
+              subtitle: Text(
+                recipe['cooking_time']?.toString() ?? 'Süre belirtilmemiş',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
               trailing: Text('${recipe['views'] ?? 0} görüntülenme'),
               onTap: () {
                 Navigator.push(

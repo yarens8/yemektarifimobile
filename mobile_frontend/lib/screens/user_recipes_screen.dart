@@ -149,7 +149,7 @@ class _UserRecipesScreenState extends State<UserRecipesScreen> {
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          '${recipe.preparationTime ?? "?"} dakika',
+                                          '${recipe.cookingTime ?? "?"} dakika',
                                           style: TextStyle(
                                             color: Colors.grey.shade600,
                                             fontSize: 14,

@@ -465,18 +465,40 @@ class DatabaseService:
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
-                
                 cursor.execute("""
-                    SELECT r.*
+                    SELECT 
+                        r.id, 
+                        r.title, 
+                        r.views, 
+                        r.created_at, 
+                        r.cooking_time,
+                        r.image_filename, 
+                        r.ingredients,
+                        r.instructions,
+                        r.tips,
+                        u.username
                     FROM [dbo].[Recipe] r
                     INNER JOIN [dbo].[favorites] f ON r.id = f.recipe_id
+                    INNER JOIN [dbo].[User] u ON r.user_id = u.id
                     WHERE f.user_id = ?
                     ORDER BY r.title
                 """, (user_id,))
                 
-                columns = [column[0] for column in cursor.description]
-                recipes = [dict(zip(columns, row)) for row in cursor.fetchall()]
-                
+                recipes = []
+                for row in cursor.fetchall():
+                    recipe = {
+                        'id': row[0],
+                        'title': row[1],
+                        'views': row[2],
+                        'created_at': row[3],
+                        'cooking_time': row[4],
+                        'image_filename': row[5],
+                        'ingredients': row[6],
+                        'instructions': row[7],
+                        'tips': row[8],
+                        'username': row[9]
+                    }
+                    recipes.append(recipe)
                 return recipes, None
                 
         except Exception as e:

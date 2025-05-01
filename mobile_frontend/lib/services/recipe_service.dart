@@ -210,7 +210,11 @@ class RecipeService {
     
     while (retryCount < maxRetries) {
       try {
-        final url = Uri.parse('$baseUrl/favorites?user_id=$userId');
+        final url = Uri.parse('$baseUrl/favorites').replace(
+          queryParameters: {
+            'user_id': userId.toString(),
+          },
+        );
         print('Attempt ${retryCount + 1}: Request URL: $url');
 
         final client = http.Client();
@@ -221,39 +225,27 @@ class RecipeService {
           ).timeout(Duration(seconds: ApiConfig.timeoutSeconds));
 
           print('Response status code: ${response.statusCode}');
+          final responseBody = response.body;
+          print('Response body: $responseBody');
+          
           if (response.statusCode == 200) {
-            final responseBody = response.body;
-            print('Response body length: ${responseBody.length}');
-            
             if (responseBody.isEmpty) {
               throw Exception('Boş yanıt alındı');
             }
 
             final Map<String, dynamic> responseData = json.decode(responseBody);
             final List<dynamic> data = responseData['recipes'] ?? [];
-            // Debug: Backend'den gelen ham veriyi yazdır
             print('Backend response data: $data');
             
-            final recipes = data.map((json) {
-              final recipe = Recipe.fromJson(json);
-              // Debug: Her bir tarifin görsel bilgilerini yazdır
-              print('Tarif: ${recipe.title}');
-              if (recipe.images.isNotEmpty) {
-                print('Görsel URL\'leri:');
-                for (var image in recipe.images) {
-                  print('- ${image.imageUrl}');
-                }
-              } else {
-                print('Görseli yok');
-              }
-              return recipe;
-            }).toList();
-            
+            final recipes = data.map((json) => Recipe.fromJson(json)).toList();
             return recipes;
           } else {
             final error = _parseError(response);
-            throw Exception(error);
+            throw Exception('Sunucu hatası: $error (Status: ${response.statusCode})');
           }
+        } catch (e) {
+          print('Error parsing response: $e');
+          throw e;
         } finally {
           client.close();
         }
