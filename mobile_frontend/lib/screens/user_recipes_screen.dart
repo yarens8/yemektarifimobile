@@ -131,7 +131,7 @@ class _UserRecipesScreenState extends State<UserRecipesScreen> {
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          recipe.user.username,
+                                          'Tarif Sahibi',
                                           style: TextStyle(
                                             color: Colors.grey.shade600,
                                             fontSize: 14,

@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/recipe.dart';
+import '../config/api_config.dart';
 
 class RecipeService {
   // API'nin base URL'i
-  static const String baseUrl = 'http://10.0.2.2:5000/api';
-  static const int maxRetries = 3;
-  static const Duration timeout = Duration(seconds: 10);
+  static const String baseUrl = ApiConfig.baseUrl;
+  static const int maxRetries = ApiConfig.maxRetries;
+  static const Duration timeout = Duration(seconds: ApiConfig.timeoutSeconds);
 
   Future<List<Recipe>> getUserRecipes(int userId) async {
     print('Fetching recipes for userId: $userId');
@@ -209,23 +210,15 @@ class RecipeService {
     
     while (retryCount < maxRetries) {
       try {
-        final uri = Uri.parse('$baseUrl/favorites').replace(
-          queryParameters: {
-            'user_id': userId.toString(),
-          },
-        );
-        print('Attempt ${retryCount + 1}: Request URL: $uri');
+        final url = Uri.parse('$baseUrl/favorites?user_id=$userId');
+        print('Attempt ${retryCount + 1}: Request URL: $url');
 
         final client = http.Client();
         try {
           final response = await client.get(
-            uri,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Connection': 'keep-alive',
-            },
-          ).timeout(timeout);
+            url,
+            headers: ApiConfig.defaultHeaders,
+          ).timeout(Duration(seconds: ApiConfig.timeoutSeconds));
 
           print('Response status code: ${response.statusCode}');
           if (response.statusCode == 200) {
@@ -233,12 +226,30 @@ class RecipeService {
             print('Response body length: ${responseBody.length}');
             
             if (responseBody.isEmpty) {
-              return [];
+              throw Exception('Boş yanıt alındı');
             }
 
-            final Map<String, dynamic> data = json.decode(responseBody);
-            final List<dynamic> recipes = data['recipes'] ?? [];
-            return recipes.map((json) => Recipe.fromJson(json)).toList();
+            final Map<String, dynamic> responseData = json.decode(responseBody);
+            final List<dynamic> data = responseData['recipes'] ?? [];
+            // Debug: Backend'den gelen ham veriyi yazdır
+            print('Backend response data: $data');
+            
+            final recipes = data.map((json) {
+              final recipe = Recipe.fromJson(json);
+              // Debug: Her bir tarifin görsel bilgilerini yazdır
+              print('Tarif: ${recipe.title}');
+              if (recipe.images.isNotEmpty) {
+                print('Görsel URL\'leri:');
+                for (var image in recipe.images) {
+                  print('- ${image.imageUrl}');
+                }
+              } else {
+                print('Görseli yok');
+              }
+              return recipe;
+            }).toList();
+            
+            return recipes;
           } else {
             final error = _parseError(response);
             throw Exception(error);
@@ -279,6 +290,122 @@ class RecipeService {
       throw Exception('Favori tarifler alınamadı');
     } catch (e) {
       throw Exception('Favori tarifler alınamadı: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> createRecipe({
+    required String title,
+    required int userId,
+    required int categoryId,
+    required String ingredients,
+    required String instructions,
+    String? servings,
+    String? prepTime,
+    String? cookTime,
+    String? tips,
+    String? imageUrl,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/recipes/create'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'title': title,
+          'user_id': userId,
+          'category_id': categoryId,
+          'ingredients': ingredients,
+          'instructions': instructions,
+          'servings': servings,
+          'prep_time': prepTime,
+          'cook_time': cookTime,
+          'tips': tips,
+          'image_url': imageUrl,
+        }),
+      );
+
+      final data = json.decode(response.body);
+      
+      if (response.statusCode == 201) {
+        return {
+          'success': true,
+          'recipe': data['recipe'],
+          'message': data['message'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['error'] ?? 'Tarif eklenirken bir hata oluştu',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Bir hata oluştu: $e',
+      };
+    }
+  }
+
+  // Tarife puan verme
+  Future<Map<String, dynamic>> rateRecipe({
+    required int recipeId,
+    required int userId,
+    required int rating,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/recipes/$recipeId/rate'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'user_id': userId,
+          'rating': rating,
+        }),
+      );
+
+      final data = json.decode(response.body);
+      
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message'],
+          'average_rating': data['average_rating'],
+          'rating_count': data['rating_count'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['error'] ?? 'Puan verme işlemi başarısız oldu',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Bir hata oluştu: $e',
+      };
+    }
+  }
+
+  // Kullanıcının verdiği puanı getirme
+  Future<int?> getUserRating({
+    required int recipeId,
+    required int userId,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/recipes/$recipeId/user-rating').replace(
+          queryParameters: {
+            'user_id': userId.toString(),
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['rating'];
+      }
+      return null;
+    } catch (e) {
+      print('Error getting user rating: $e');
+      return null;
     }
   }
 } 

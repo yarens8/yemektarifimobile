@@ -257,6 +257,81 @@ def get_user_favorites():
     except Exception as e:
         return jsonify({'message': str(e)}), 500
 
+@app.route('/api/recipes/create', methods=['POST'])
+def create_recipe():
+    try:
+        data = request.get_json()
+        required_fields = ['title', 'user_id', 'category_id', 'ingredients', 'instructions']
+        
+        # Zorunlu alanları kontrol et
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'{field} alanı gereklidir'}), 400
+        
+        # Tarifi veritabanına ekle
+        recipe = db_service.create_recipe(
+            title=data['title'],
+            user_id=data['user_id'],
+            category_id=data['category_id'],
+            ingredients=data['ingredients'],
+            instructions=data['instructions'],
+            servings=data.get('servings'),
+            prep_time=data.get('prep_time'),
+            cook_time=data.get('cook_time'),
+            tips=data.get('tips'),
+            image_url=data.get('image_url')
+        )
+        
+        return jsonify({
+            'message': 'Tarif başarıyla eklendi',
+            'recipe': recipe
+        }), 201
+        
+    except Exception as e:
+        print(f"Create recipe endpoint error: {str(e)}")  # Debug print
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/recipes/<int:recipe_id>/rate', methods=['POST'])
+def rate_recipe(recipe_id):
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        rating = data.get('rating')
+
+        if not all([user_id, rating]):
+            return jsonify({'error': 'Kullanıcı ID ve puan gereklidir'}), 400
+
+        if not isinstance(rating, int) or rating < 1 or rating > 5:
+            return jsonify({'error': 'Puan 1 ile 5 arasında olmalıdır'}), 400
+
+        result = db_service.rate_recipe(recipe_id, user_id, rating)
+        if result.get('success'):
+            return jsonify({
+                'message': 'Puan başarıyla verildi',
+                'average_rating': result['average_rating'],
+                'rating_count': result['rating_count']
+            }), 200
+        else:
+            return jsonify({'error': result.get('message')}), 400
+
+    except Exception as e:
+        print(f"Error rating recipe: {str(e)}")
+        return jsonify({'error': 'Puan verme işlemi sırasında bir hata oluştu'}), 500
+
+@app.route('/api/recipes/<int:recipe_id>/user-rating', methods=['GET'])
+def get_user_rating(recipe_id):
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Kullanıcı ID gereklidir'}), 400
+
+        rating = db_service.get_user_rating(recipe_id, int(user_id))
+        return jsonify({'rating': rating}), 200
+
+    except Exception as e:
+        print(f"Error getting user rating: {str(e)}")
+        return jsonify({'error': 'Kullanıcı puanı alınırken bir hata oluştu'}), 500
+
 if __name__ == '__main__':
     try:
         logger.info("Starting the server...")

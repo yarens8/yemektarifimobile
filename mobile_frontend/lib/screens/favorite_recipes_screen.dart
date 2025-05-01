@@ -157,13 +157,13 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
                                         ),
                                         child: ClipRRect(
                                           borderRadius: BorderRadius.circular(15),
-                                          child: recipe.images.isNotEmpty
+                                          child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
                                               ? Image.asset(
-                                                  'assets/recipe_images/${recipe.images.first.imageUrl.split('/').last}',
+                                                  'assets/recipe_images/${recipe.imageUrl}',
                                                   fit: BoxFit.cover,
                                                   errorBuilder: (context, error, stackTrace) {
                                                     print('Resim yükleme hatası: $error');
-                                                    print('Yüklenmeye çalışılan resim: assets/recipe_images/${recipe.images.first.imageUrl.split('/').last}');
+                                                    print('Yüklenmeye çalışılan resim: assets/recipe_images/${recipe.imageUrl}');
                                                     return Icon(
                                                       Icons.restaurant_menu,
                                                       color: Colors.grey.shade300,
@@ -201,7 +201,7 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
                                                 ),
                                                 const SizedBox(width: 4),
                                                 Text(
-                                                  recipe.user.username,
+                                                  recipe.username,
                                                   style: TextStyle(
                                                     color: Colors.grey.shade600,
                                                     fontSize: 14,

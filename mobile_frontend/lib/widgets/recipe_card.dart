@@ -162,10 +162,10 @@ class _RecipeCardState extends State<RecipeCard> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        widget.recipe.user.username,
+                        'Tarif Sahibi',
                         style: TextStyle(
-                          color: Colors.grey[600],
                           fontSize: 14,
+                          color: Colors.grey[600],
                         ),
                       ),
                       const Spacer(),

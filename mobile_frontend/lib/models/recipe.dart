@@ -1,96 +1,109 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:http/http.dart' show HttpDate;
+import 'package:intl/intl.dart';
+
 class Recipe {
   final int id;
   final String title;
   final String? description;
-  final String? imageFilename;
+  final String? imageUrl;
   final List<RecipeImage> images;
-  final User user;
+  final int userId;
+  final String username;
+  final int categoryId;
   final bool isFavorited;
   final int favoriteCount;
   final int commentCount;
   final int views;
   final String? preparationTime;
+  final String? cookingTime;
   final String? ingredients;
   final String? instructions;
   final String? tips;
-  final int? servingCount;
+  final String? servingSize;
   final String? difficulty;
+  final DateTime? createdAt;
+  final double averageRating;
+  final int ratingCount;
+  final int? userRating;
 
   Recipe({
     required this.id,
     required this.title,
     this.description,
-    this.imageFilename,
+    this.imageUrl,
     required this.images,
-    required this.user,
+    required this.userId,
+    required this.username,
+    required this.categoryId,
     this.isFavorited = false,
     this.favoriteCount = 0,
     this.commentCount = 0,
     this.views = 0,
     this.preparationTime,
+    this.cookingTime,
     this.ingredients,
     this.instructions,
     this.tips,
-    this.servingCount,
+    this.servingSize,
     this.difficulty,
+    this.createdAt,
+    this.averageRating = 0.0,
+    this.ratingCount = 0,
+    this.userRating,
   });
 
   factory Recipe.fromJson(Map<String, dynamic> json) {
-    List<RecipeImage> recipeImages = [];
-    
-    if (json['image_filename'] != null && json['image_filename'].toString().isNotEmpty) {
-      print('Tarif başlığı: ${json['title']}');
-      print('Image filename: ${json['image_filename']}');
-      recipeImages.add(RecipeImage(
-        id: 0,
-        imageUrl: json['image_filename'].toString().split('/').last
-      ));
-    }
-    
-    if (json['images'] is List) {
-      print('Images listesi: ${json['images']}');
-      recipeImages.addAll(
-        (json['images'] as List).map((image) {
-          if (image is Map) {
-            String filename = image['url'] ?? image['image_url'] ?? image['imageUrl'] ?? '';
-            return RecipeImage(
-              id: image['id'] ?? 0,
-              imageUrl: filename.split('/').last
-            );
+    DateTime? parsedDate;
+    if (json['created_at'] != null) {
+      try {
+        parsedDate = DateTime.parse(json['created_at']);
+      } catch (e) {
+        try {
+          parsedDate = HttpDate.parse(json['created_at']);
+        } catch (e) {
+          try {
+            final dateStr = json['created_at'].toString();
+            if (dateStr.contains('GMT')) {
+              final formatter = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", 'en_US');
+              parsedDate = formatter.parse(dateStr);
+            } else {
+              parsedDate = DateFormat("yyyy-MM-dd HH:mm:ss").parse(dateStr);
+            }
+          } catch (e) {
+            print('Tarih ayrıştırma hatası: ${e.toString()}');
+            print('Ayrıştırılamayan tarih: ${json['created_at']}');
+            parsedDate = null;
           }
-          return RecipeImage(id: 0, imageUrl: image.toString().split('/').last);
-        }).toList()
-      );
-    }
-
-    User recipeUser;
-    if (json['user'] != null && json['user'] is Map) {
-      recipeUser = User.fromJson(json['user']);
-    } else {
-      recipeUser = User(
-        id: json['user_id'] ?? 0,
-        username: json['username'] ?? 'Anonim',
-        profileImage: json['profile_image'],
-      );
+        }
+      }
     }
 
     return Recipe(
       id: json['id'] ?? 0,
       title: json['title'] ?? '',
       description: json['description'],
-      imageFilename: json['image_filename'],
-      images: recipeImages,
-      user: recipeUser,
+      imageUrl: json['image_filename'] ?? '',
+      images: [],
+      userId: json['user_id'] ?? 0,
+      username: json['username'] ?? '',
+      categoryId: json['category_id'] ?? 0,
+      views: json['views'] ?? 0,
+      preparationTime: json['preparation_time']?.toString(),
+      cookingTime: json['cooking_time']?.toString(),
+      ingredients: json['ingredients'],
+      instructions: json['instructions'],
+      tips: json['tips'],
+      servingSize: json['serving_size']?.toString(),
+      difficulty: json['difficulty'],
+      createdAt: parsedDate,
       isFavorited: json['is_favorited'] ?? false,
       favoriteCount: json['favorite_count'] ?? 0,
       commentCount: json['comment_count'] ?? 0,
-      views: json['views'] ?? 0,
-      preparationTime: json['preparation_time']?.toString(),
-      ingredients: json['ingredients']?.toString(),
-      instructions: json['instructions']?.toString(),
-      tips: json['tips']?.toString(),
-      servingCount: json['serving_count'] is int ? json['serving_count'] : null,
-      difficulty: json['difficulty']?.toString(),
+      averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0.0,
+      ratingCount: json['rating_count'] ?? 0,
+      userRating: json['user_rating'],
     );
   }
 
@@ -99,17 +112,22 @@ class Recipe {
       'id': id,
       'title': title,
       'description': description,
-      'image_filename': imageFilename,
+      'image_filename': imageUrl,
+      'user_id': userId,
+      'username': username,
+      'category_id': categoryId,
       'views': views,
       'preparation_time': preparationTime,
+      'cooking_time': cookingTime,
       'ingredients': ingredients,
       'instructions': instructions,
-      'is_favorited': isFavorited,
-      'favorite_count': favoriteCount,
-      'comment_count': commentCount,
       'tips': tips,
-      'serving_count': servingCount,
+      'serving_size': servingSize,
       'difficulty': difficulty,
+      'created_at': createdAt?.toIso8601String(),
+      'average_rating': averageRating,
+      'rating_count': ratingCount,
+      'user_rating': userRating,
     };
   }
 }

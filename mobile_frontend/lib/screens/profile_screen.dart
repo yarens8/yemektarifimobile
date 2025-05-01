@@ -6,6 +6,7 @@ import 'edit_profile_screen.dart';
 import 'my_recipes_screen.dart';
 import 'favorite_recipes_screen.dart';
 import 'user_recipes_screen.dart';
+import 'add_recipe_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -172,7 +173,16 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.add_circle,
                 title: 'Tarif Ekle',
                 onTap: () {
-                  // TODO: Tarif ekleme sayfasına yönlendir
+                  if (user != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AddRecipeScreen()),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Tarif eklemek için lütfen giriş yapın')),
+                    );
+                  }
                 },
               ),
               _buildProfileMenuItem(

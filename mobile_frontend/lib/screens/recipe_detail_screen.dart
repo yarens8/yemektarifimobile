@@ -28,9 +28,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         _recipe = widget.recipe;
         _isLoading = false;
       });
-      if (_recipe!.images.isNotEmpty) {
+      if (_recipe!.imageUrl != null && _recipe!.imageUrl!.isNotEmpty) {
         print('Tarif: ${_recipe!.title}');
-        print('Resim dosya adı: ${_recipe!.images.first.imageUrl}');
+        print('Resim dosya adı: ${_recipe!.imageUrl}');
       }
     } else if (widget.recipeId != null) {
       _loadRecipeDetails();
@@ -93,17 +93,26 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               id: recipe.id,
               title: recipe.title,
               description: recipe.description,
-              imageFilename: recipe.imageFilename,
+              imageUrl: recipe.imageUrl,
               images: recipe.images,
-              user: recipe.user,
+              userId: recipe.userId,
+              username: recipe.username,
+              categoryId: recipe.categoryId,
               isFavorited: !recipe.isFavorited,
               favoriteCount: recipe.favoriteCount + (recipe.isFavorited ? -1 : 1),
               commentCount: recipe.commentCount,
               views: recipe.views,
               preparationTime: recipe.preparationTime,
+              cookingTime: recipe.cookingTime,
               ingredients: recipe.ingredients,
               instructions: recipe.instructions,
               tips: recipe.tips,
+              servingSize: recipe.servingSize,
+              difficulty: recipe.difficulty,
+              createdAt: recipe.createdAt,
+              averageRating: recipe.averageRating,
+              ratingCount: recipe.ratingCount,
+              userRating: recipe.userRating,
             );
           });
         }
@@ -153,16 +162,16 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               background: Stack(
                 children: [
                   // Tarif resmi
-                  _recipe!.images.isNotEmpty
-                ? Image.asset(
-                          'assets/recipe_images/${_recipe!.images[0].imageUrl}',
+                  _recipe!.imageUrl != null && _recipe!.imageUrl!.isNotEmpty
+                      ? Image.asset(
+                          'assets/recipe_images/${_recipe!.imageUrl}',
                           width: double.infinity,
                           height: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
                             print('Resim yükleme hatası: $error');
-                            print('Yüklenmeye çalışılan resim: assets/recipe_images/${_recipe!.images[0].imageUrl}');
-                      return Container(
+                            print('Yüklenmeye çalışılan resim: assets/recipe_images/${_recipe!.imageUrl}');
+                            return Container(
                               color: Colors.orange.shade50,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -177,14 +186,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     'Resim yüklenemedi',
                                     style: TextStyle(
                                       color: Colors.orange.shade700,
-                          ),
+                                    ),
                                   ),
                                 ],
-                        ),
-                      );
-                    },
-                  )
-                : Container(
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
                           color: Colors.orange.shade50,
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -250,10 +259,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              _recipe!.user.username,
+                              'Tarif Sahibi: ${_recipe!.username}',
                               style: const TextStyle(
-                        color: Colors.white,
-                                fontSize: 16,
+                                color: Colors.white,
+                                fontSize: 14,
                                 shadows: [
                                   Shadow(
                                     offset: Offset(0, 1),

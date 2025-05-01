@@ -502,5 +502,173 @@ class DatabaseService:
             self.logger.error(f"Favori kontrolü hatası: {str(e)}")
             return False, f"Favori kontrolü yapılırken hata oluştu: {str(e)}"
 
+    def create_recipe(self, title, user_id, category_id, ingredients, instructions, servings=None, prep_time=None, cook_time=None, tips=None, image_url=None):
+        try:
+            # SQL sorgusu
+            query = """
+                INSERT INTO [dbo].[Recipe] (
+                    title, 
+                    user_id, 
+                    category_id, 
+                    ingredients, 
+                    instructions, 
+                    serving_size, 
+                    preparation_time, 
+                    cooking_time, 
+                    tips, 
+                    image_filename,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
+                SELECT SCOPE_IDENTITY() as id;
+            """
+            
+            # Sorguyu çalıştır
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, (
+                    title,
+                    user_id,
+                    category_id,
+                    ingredients,
+                    instructions,
+                    servings,  # serving_size alanına
+                    prep_time,  # preparation_time alanına
+                    cook_time,  # cooking_time alanına
+                    tips,
+                    image_url,  # image_filename alanına
+                ))
+                
+                # Yeni eklenen tarifin ID'sini al
+                recipe_id = cursor.fetchone()[0]
+                
+                # Yeni eklenen tarifi getir
+                cursor.execute("""
+                    SELECT 
+                        id, 
+                        title, 
+                        user_id, 
+                        category_id, 
+                        ingredients, 
+                        instructions, 
+                        serving_size as servings, 
+                        preparation_time as prep_time, 
+                        cooking_time as cook_time, 
+                        tips, 
+                        image_filename as image_url, 
+                        created_at
+                    FROM [dbo].[Recipe] 
+                    WHERE id = ?
+                """, (recipe_id,))
+                
+                recipe = cursor.fetchone()
+                conn.commit()
+                
+                # Tarif bilgilerini sözlük olarak döndür
+                if recipe:
+                    return {
+                        'id': recipe[0],
+                        'title': recipe[1],
+                        'user_id': recipe[2],
+                        'category_id': recipe[3],
+                        'ingredients': recipe[4],
+                        'instructions': recipe[5],
+                        'servings': recipe[6],
+                        'prep_time': recipe[7],
+                        'cook_time': recipe[8],
+                        'tips': recipe[9],
+                        'image_url': recipe[10],
+                        'created_at': recipe[11].isoformat() if recipe[11] else None
+                    }
+                    
+                return None
+                
+        except Exception as e:
+            print(f"Error creating recipe: {str(e)}")
+            if 'conn' in locals():
+                conn.rollback()
+            raise e
+
+    def rate_recipe(self, recipe_id, user_id, rating):
+        try:
+            # Önce kullanıcının daha önce puan verip vermediğini kontrol et
+            check_query = """
+                SELECT id FROM RecipeRating 
+                WHERE recipe_id = ? AND user_id = ?
+            """
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(check_query, (recipe_id, user_id))
+                existing_rating = cursor.fetchone()
+
+            if existing_rating:
+                # Mevcut puanı güncelle
+                update_query = """
+                    UPDATE RecipeRating 
+                    SET rating = ?, created_at = GETDATE()
+                    WHERE recipe_id = ? AND user_id = ?
+                """
+                with self.get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(update_query, (rating, recipe_id, user_id))
+            else:
+                # Yeni puan ekle
+                insert_query = """
+                    INSERT INTO RecipeRating (recipe_id, user_id, rating, created_at)
+                    VALUES (?, ?, ?, GETDATE())
+                """
+                with self.get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(insert_query, (recipe_id, user_id, rating))
+
+            # Ortalama puanı ve toplam puan sayısını hesapla
+            stats_query = """
+                SELECT AVG(CAST(rating AS FLOAT)) as average_rating, COUNT(*) as rating_count
+                FROM RecipeRating
+                WHERE recipe_id = ?
+            """
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(stats_query, (recipe_id,))
+                stats = cursor.fetchone()
+
+            # Tariflerin ortalama puanını güncelle
+            update_recipe_query = """
+                UPDATE Recipe 
+                SET average_rating = ?, rating_count = ?
+                WHERE id = ?
+            """
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(update_recipe_query, (stats[0], stats[1], recipe_id))
+                conn.commit()
+
+            return {
+                'success': True,
+                'average_rating': float(stats[0]) if stats[0] else 0.0,
+                'rating_count': stats[1]
+            }
+
+        except Exception as e:
+            print(f"Error in rate_recipe: {str(e)}")
+            return {'success': False, 'message': str(e)}
+
+    def get_user_rating(self, recipe_id, user_id):
+        try:
+            query = """
+                SELECT rating 
+                FROM RecipeRating 
+                WHERE recipe_id = ? AND user_id = ?
+            """
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, (recipe_id, user_id))
+                result = cursor.fetchone()
+                return result[0] if result else None
+
+        except Exception as e:
+            print(f"Error in get_user_rating: {str(e)}")
+            return None
+
 # Singleton instance
 db_service = DatabaseService() 

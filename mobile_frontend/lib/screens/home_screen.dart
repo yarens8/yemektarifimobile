@@ -4,6 +4,9 @@ import '../providers/recipe_provider.dart';
 import '../models/recipe.dart';
 import 'recipe_detail_screen.dart';
 import 'filter_screen.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:http/http.dart' show HttpDate;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -258,7 +261,30 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => RecipeDetailScreen(recipe: Recipe.fromJson(recipe)),
+              builder: (context) => RecipeDetailScreen(
+                recipe: Recipe(
+                  id: recipe['id'] ?? 0,
+                  title: recipe['title'] ?? '',
+                  description: recipe['description'],
+                  imageUrl: recipe['image_filename'],
+                  images: [],
+                  userId: recipe['user_id'] ?? 0,
+                  username: recipe['username'] ?? '',
+                  categoryId: recipe['category_id'] ?? 0,
+                  views: recipe['views'] ?? 0,
+                  preparationTime: recipe['preparation_time']?.toString(),
+                  cookingTime: recipe['cooking_time']?.toString(),
+                  ingredients: recipe['ingredients'],
+                  instructions: recipe['instructions'],
+                  tips: recipe['tips'],
+                  servingSize: recipe['serving_size']?.toString(),
+                  difficulty: recipe['difficulty'],
+                  createdAt: recipe['created_at'] != null ? _parseDate(recipe['created_at']) : null,
+                  averageRating: (recipe['average_rating'] as num?)?.toDouble() ?? 0.0,
+                  ratingCount: recipe['rating_count'] ?? 0,
+                  userRating: recipe['user_rating'],
+                ),
+              ),
             ),
           );
         },
@@ -370,6 +396,25 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  DateTime? _parseDate(String dateStr) {
+    try {
+      return DateTime.parse(dateStr);
+    } catch (e) {
+      try {
+        if (dateStr.contains('GMT')) {
+          final formatter = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", 'en_US');
+          return formatter.parse(dateStr);
+        } else {
+          return DateFormat("yyyy-MM-dd HH:mm:ss").parse(dateStr);
+        }
+      } catch (e) {
+        print('Tarih ayrıştırma hatası: $e');
+        print('Ayrıştırılamayan tarih: $dateStr');
+        return null;
+      }
+    }
   }
 }
 
