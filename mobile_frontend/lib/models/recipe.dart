@@ -116,9 +116,6 @@ class Recipe {
       'serving_size': servingSize,
       'difficulty': difficulty,
       'created_at': createdAt?.toIso8601String(),
-      'average_rating': averageRating,
-      'rating_count': ratingCount,
-      'user_rating': userRating,
     };
   }
 }

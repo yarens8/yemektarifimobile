@@ -154,9 +154,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               servingSize: recipe.servingSize,
               difficulty: recipe.difficulty,
               createdAt: recipe.createdAt,
-              averageRating: recipe.averageRating,
-              ratingCount: recipe.ratingCount,
-              userRating: recipe.userRating,
             );
           });
         }
@@ -217,13 +214,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             );
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'])),
+            const SnackBar(content: Text('Puanınız başarıyla kaydedildi')),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(result['message'])),
           );
         }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Puan verirken bir hata oluştu')),
+        );
       }
     } finally {
       if (mounted) {
@@ -268,15 +271,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 children: [
                   // Tarif resmi
                   _recipe!.imageUrl != null && _recipe!.imageUrl!.isNotEmpty
-                      ? Image.asset(
+                ? Image.asset(
                           'assets/recipe_images/${_recipe!.imageUrl}',
                           width: double.infinity,
                           height: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
                             print('Resim yükleme hatası: $error');
                             print('Yüklenmeye çalışılan resim: assets/recipe_images/${_recipe!.imageUrl}');
-                            return Container(
+                      return Container(
                               color: Colors.orange.shade50,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -294,11 +297,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     ),
                                   ),
                                 ],
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
+                        ),
+                      );
+                    },
+                  )
+                : Container(
                           color: Colors.orange.shade50,
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -366,7 +369,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             Text(
                               'Tarif Sahibi: ${_recipe!.username}',
                               style: const TextStyle(
-                                color: Colors.white,
+                        color: Colors.white,
                                 fontSize: 14,
                                 shadows: [
                                   Shadow(
@@ -460,7 +463,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           const SizedBox(width: 8),
                           _buildStatItem(
                             icon: Icons.star,
-                            label: '${_recipe!.averageRating.toStringAsFixed(1)} (${_recipe!.ratingCount})',
+                            label: _recipe!.userRating != null 
+                                ? 'Puanınız: ${_recipe!.userRating}'
+                                : 'Puan Ver',
                             color: Colors.amber,
                           ),
                         ],

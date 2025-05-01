@@ -278,7 +278,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   tips: recipe['tips'],
                   servingSize: recipe['serving_size']?.toString(),
                   difficulty: recipe['difficulty'],
-                  createdAt: recipe['created_at'] != null ? _parseDate(recipe['created_at']) : null,
+                  createdAt: recipe['created_at'] != null
+                      ? DateTime.parse(recipe['created_at'])
+                      : null,
                   averageRating: (recipe['average_rating'] as num?)?.toDouble() ?? 0.0,
                   ratingCount: recipe['rating_count'] ?? 0,
                   userRating: recipe['user_rating'],
