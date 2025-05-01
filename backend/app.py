@@ -2,8 +2,21 @@ from flask import Flask, jsonify, request
 from database_service import db_service
 from flask_cors import CORS
 import logging
+from decimal import Decimal
+import json
+from datetime import datetime
+
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
 
 app = Flask(__name__)
+app.json_encoder = CustomJSONEncoder  # Özel JSON encoder'ı ayarla
+
 # CORS ayarlarını güncelle
 CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE"]}})
 
