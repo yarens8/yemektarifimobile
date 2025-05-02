@@ -78,8 +78,8 @@ class DatabaseService:
                             r.[image_filename],
                             r.[ingredients_sections],
                             r.[username],
-                            r.[average_rating],
-                            r.[rating_count]
+                            COALESCE(r.[average_rating], 0.0) as average_rating,
+                            COALESCE(r.[rating_count], 0) as rating_count
                         FROM [dbo].[Recipe] r
                         WHERE r.[category_id] = ?
                         ORDER BY r.[views] DESC
@@ -103,8 +103,8 @@ class DatabaseService:
                             r.[image_filename],
                             r.[ingredients_sections],
                             r.[username],
-                            r.[average_rating],
-                            r.[rating_count]
+                            COALESCE(r.[average_rating], 0.0) as average_rating,
+                            COALESCE(r.[rating_count], 0) as rating_count
                         FROM [dbo].[Recipe] r
                         ORDER BY r.[views] DESC
                     """
@@ -486,7 +486,9 @@ class DatabaseService:
                         r.ingredients,
                         r.instructions,
                         r.tips,
-                        u.username
+                        u.username,
+                        COALESCE(r.average_rating, 0.0) as average_rating,
+                        COALESCE(r.rating_count, 0) as rating_count
                     FROM [dbo].[Recipe] r
                     INNER JOIN [dbo].[favorites] f ON r.id = f.recipe_id
                     INNER JOIN [dbo].[User] u ON r.user_id = u.id
@@ -506,7 +508,9 @@ class DatabaseService:
                         'ingredients': row[6],
                         'instructions': row[7],
                         'tips': row[8],
-                        'username': row[9]
+                        'username': row[9],
+                        'average_rating': float(row[10]) if row[10] else 0.0,
+                        'rating_count': row[11] if row[11] else 0
                     }
                     recipes.append(recipe)
                 return recipes, None
@@ -705,17 +709,19 @@ class DatabaseService:
     def add_comment(self, recipe_id, user_id, content):
         """Tarife yorum ekler"""
         try:
+            self.logger.info(f"Yorum ekleme başladı - recipe_id: {recipe_id}, user_id: {user_id}")
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 
-                # Yorumu ekle
+                # Yorumu ekle ve ID'sini al
                 cursor.execute("""
                     INSERT INTO [dbo].[Comment] (recipe_id, user_id, content, created_at)
-                    VALUES (?, ?, ?, GETDATE());
-                    SELECT SCOPE_IDENTITY() as id;
+                    OUTPUT INSERTED.id
+                    VALUES (?, ?, ?, GETDATE())
                 """, (recipe_id, user_id, content))
                 
                 comment_id = cursor.fetchone()[0]
+                self.logger.info(f"Yorum eklendi, comment_id: {comment_id}")
                 
                 # Eklenen yorumu getir
                 cursor.execute("""
@@ -729,7 +735,7 @@ class DatabaseService:
                 conn.commit()
                 
                 if result:
-                    return {
+                    comment = {
                         'id': result[0],
                         'content': result[1],
                         'created_at': result[2].isoformat() if result[2] else None,
@@ -737,11 +743,15 @@ class DatabaseService:
                         'recipe_id': result[4],
                         'username': result[5]
                     }
+                    self.logger.info(f"Yorum başarıyla getirildi: {comment}")
+                    return comment
+                
+                self.logger.error("Yorum eklendi fakat getirilemedi")
                 return None
                 
         except Exception as e:
             self.logger.error(f"Yorum eklenirken hata: {str(e)}")
-            return None
+            raise Exception(f"Yorum eklenirken bir hata oluştu: {str(e)}")
 
     def get_recipe_comments(self, recipe_id):
         """Tarife ait yorumları getirir"""

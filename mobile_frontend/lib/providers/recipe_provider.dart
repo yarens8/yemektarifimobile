@@ -62,7 +62,7 @@ class RecipeProvider extends ChangeNotifier {
           _recipesByCategory[categoryId]![existingRecipeIndex] = recipe;
         } else {
           // Yeni tarif ekle
-          _recipesByCategory[categoryId]!.add(recipe);
+        _recipesByCategory[categoryId]!.add(recipe);
         }
       }
 

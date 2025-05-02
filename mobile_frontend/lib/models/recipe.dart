@@ -53,10 +53,35 @@ class Recipe {
   });
 
   factory Recipe.fromJson(Map<String, dynamic> json) {
+    print('Parsing recipe JSON: $json');
+
+    // Güvenli string dönüşümü
+    String safeString(dynamic value, [String defaultValue = '']) {
+      if (value == null) return defaultValue;
+      return value.toString();
+    }
+
+    // Güvenli int dönüşümü
+    int safeInt(dynamic value, [int defaultValue = 0]) {
+      if (value == null) return defaultValue;
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? defaultValue;
+      return defaultValue;
+    }
+
+    // Güvenli bool dönüşümü
+    bool safeBool(dynamic value, [bool defaultValue = false]) {
+      if (value == null) return defaultValue;
+      if (value is bool) return value;
+      if (value is int) return value != 0;
+      if (value is String) return value.toLowerCase() == 'true';
+      return defaultValue;
+    }
+
     DateTime? parsedDate;
     if (json['created_at'] != null) {
       try {
-        parsedDate = DateTime.parse(json['created_at']);
+        parsedDate = DateTime.parse(json['created_at'].toString());
       } catch (e) {
         print('Date parsing error: $e');
       }
@@ -71,32 +96,50 @@ class Recipe {
       return 0.0;
     }
 
-    return Recipe(
-      id: json['id'] ?? 0,
-      title: json['title'] ?? '',
-      description: json['description'],
-      imageUrl: json['image_filename'],
-      images: (json['images'] as List<dynamic>?)
-              ?.map((image) => RecipeImage.fromJson(image))
-              ?.toList() ?? [],
-      userId: json['user_id'] ?? 0,
-      username: json['username'] ?? '',
-      categoryId: json['category_id'] ?? 0,
-      isFavorited: json['is_favorited'] ?? false,
-      favoriteCount: parseDecimal(json['favorite_count']).toInt(),
-      commentCount: parseDecimal(json['comment_count']).toInt(),
-      views: parseDecimal(json['views']).toInt(),
-      cookingTime: json['cooking_time']?.toString(),
-      ingredients: json['ingredients'],
-      instructions: json['instructions'],
-      tips: json['tips'],
-      servingSize: json['servings']?.toString(),
-      difficulty: json['difficulty'],
-      createdAt: parsedDate,
-      averageRating: parseDecimal(json['average_rating']),
-      ratingCount: parseDecimal(json['rating_count']).toInt(),
-      userRating: json['user_rating'] != null ? parseDecimal(json['user_rating']).toInt() : null,
-    );
+    // Liste dönüşümü için güvenli metod
+    List<RecipeImage> parseImages(dynamic imagesData) {
+      if (imagesData == null) return [];
+      if (imagesData is! List) return [];
+      return imagesData.map((image) => RecipeImage.fromJson(image is Map<String, dynamic> ? image : {})).toList();
+    }
+
+    try {
+      return Recipe(
+        id: safeInt(json['id']),
+        title: safeString(json['title'], 'İsimsiz Tarif'),
+        description: safeString(json['description']),
+        imageUrl: safeString(json['image_filename']),
+        images: parseImages(json['images']),
+        userId: safeInt(json['user_id']),
+        username: safeString(json['username'], 'Anonim'),
+        categoryId: safeInt(json['category_id']),
+        isFavorited: safeBool(json['is_favorited']),
+        favoriteCount: safeInt(json['favorite_count']),
+        commentCount: safeInt(json['comment_count']),
+        views: safeInt(json['views']),
+        cookingTime: safeString(json['cooking_time'], '30 dakika'),
+        ingredients: safeString(json['ingredients']),
+        instructions: safeString(json['instructions']),
+        tips: safeString(json['tips']),
+        servingSize: safeString(json['serving_size']),
+        difficulty: safeString(json['difficulty']),
+        createdAt: parsedDate,
+        averageRating: parseDecimal(json['average_rating']),
+        ratingCount: safeInt(json['rating_count']),
+        userRating: json['user_rating'] != null ? safeInt(json['user_rating']) : null,
+      );
+    } catch (e) {
+      print('Error parsing recipe: $e');
+      // Minimum gerekli alanlarla bir Recipe objesi döndür
+      return Recipe(
+        id: safeInt(json['id']),
+        title: safeString(json['title'], 'Bilinmeyen Tarif'),
+        images: [],
+        userId: safeInt(json['user_id']),
+        username: safeString(json['username'], 'Anonim'),
+        categoryId: safeInt(json['category_id']),
+      );
+    }
   }
 
   Map<String, dynamic> toJson() {

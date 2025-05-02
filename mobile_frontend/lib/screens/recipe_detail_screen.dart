@@ -367,800 +367,493 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    if (_recipe == null) {
-      return const Scaffold(
-        body: Center(
-          child: Text('Tarif bulunamadı'),
-        ),
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.5),
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.5),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(
-                _recipe!.isFavorited ? Icons.favorite : Icons.favorite_border,
-                color: _recipe!.isFavorited ? Colors.red : Colors.white,
-              ),
-              onPressed: _isFavoriting ? null : _toggleFavorite,
+  Widget _infoChip(IconData icon, String label, Color bgColor, Color iconColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: iconColor, size: 18),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(color: iconColor, fontWeight: FontWeight.w600),
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
             ),
           ),
         ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Resim
-            Stack(
-              children: [
-                AspectRatio(
-                  aspectRatio: 1,
-                  child: _recipe!.imageUrl != null && _recipe!.imageUrl!.isNotEmpty
-                    ? Image.asset(
-                        'assets/recipe_images/${_recipe!.imageUrl}',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          print('Error loading image: $error');
-                          return Container(
-                            color: Colors.grey[200],
-                            child: const Icon(Icons.image, size: 64, color: Colors.grey),
-                      );
-                    },
-                  )
-                : Container(
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.image, size: 64, color: Colors.grey),
-                      ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    height: 100,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [
-                          Colors.black.withOpacity(0.7),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            // Başlık ve İstatistikler
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.purple.shade100.withOpacity(0.9),
-                    Colors.pink.shade50.withOpacity(0.9),
-                  ],
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    child: Text(
-                      _recipe!.title,
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.deepPurple,
-                        height: 1.1,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Colors.white,
-                          child: Text(
-                            _recipe!.username?[0].toUpperCase() ?? 'A',
-                            style: TextStyle(
-                              color: Colors.purple.shade700,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          _recipe!.username ?? 'Anonim',
-                          style: TextStyle(
-                            color: Colors.purple.shade700,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    height: 50,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        _buildStatChip(
-                          icon: Icons.timer_outlined,
-                          label: '30 dakika',
-                          backgroundColor: Colors.blue.shade50,
-                        ),
-                        const SizedBox(width: 12),
-                        _buildStatChip(
-                          icon: Icons.favorite_border,
-                          label: '0 Favori',
-                          backgroundColor: Colors.pink.shade50,
-                        ),
-                        const SizedBox(width: 12),
-                        _buildStatChip(
-                          icon: Icons.visibility_outlined,
-                          label: '1029',
-                          backgroundColor: Colors.purple.shade50,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Puan Sistemi
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.star,
-                                  color: Colors.amber,
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${(_recipe!.averageRating ?? 0.0).toStringAsFixed(1)}',
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.deepPurple,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '(${_recipe!.ratingCount ?? 0} ${(_recipe!.ratingCount ?? 0) == 0 ? 'değerlendirme' : 'değerlendirme'})',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (_recipe!.userRating != null)
-                              Text(
-                                'Sizin puanınız: ',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                              ),
-                            Row(
-                              children: List.generate(5, (index) {
-                                return InkWell(
-                                  onTap: _isRating ? null : () => _rateRecipe(index + 1),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                                    child: Icon(
-                                      index < (_recipe!.userRating ?? 0)
-                                          ? Icons.star
-                                          : Icons.star_border,
-                                      color: Colors.amber,
-                                      size: 32,
-                                    ),
-                                  ),
-                                );
-                              }),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Malzemeler
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.grey.shade200,
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.pink.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            Icons.restaurant_menu,
-                            color: Colors.purple.shade700,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Malzemeler',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.purple.shade900,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    color: Colors.white,
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      itemCount: (_recipe!.ingredients ?? '').split('\n').where((line) => line.trim().isNotEmpty).length,
-                      itemBuilder: (context, index) {
-                        final ingredients = (_recipe!.ingredients ?? '').split('\n').where((line) => line.trim().isNotEmpty).toList();
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: Colors.pink.shade50,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '${index + 1}',
-                                    style: TextStyle(
-                                      color: Colors.purple.shade700,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  ingredients[index].trim(),
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    height: 1.2,
-                                    color: Colors.grey.shade800,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Hazırlanışı
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.purple.shade100,
-                              Colors.pink.shade100,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Icon(
-                          Icons.local_dining,
-                          color: Colors.purple.shade700,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        'Hazırlanışı',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.purple.shade900,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.purple.shade100.withOpacity(0.5),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: (_recipe!.instructions ?? '').split('\n')
-                          .where((step) => step.trim().isNotEmpty)
-                          .toList()
-                          .asMap()
-                          .entries
-                          .map((entry) {
-                        final index = entry.key;
-                        final step = entry.value;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 20),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.purple.shade100,
-                                      Colors.pink.shade100,
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '${index + 1}',
-                                    style: TextStyle(
-                                      color: Colors.purple.shade700,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Text(
-                                  step.trim(),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    height: 1.6,
-                                    color: Colors.grey.shade800,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-            if (_recipe!.tips != null && _recipe!.tips!.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              // Püf Noktaları
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-                    Row(
-                      children: [
-                        Icon(Icons.lightbulb_outline, color: Theme.of(context).primaryColor),
-                        const SizedBox(width: 12),
-        const Text(
-          'Püf Noktaları',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Theme.of(context).primaryColor.withOpacity(0.2),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.lightbulb_outline,
-                              color: Theme.of(context).primaryColor,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Text(
-                              _recipe!.tips!,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                height: 1.6,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            if (_comments.isNotEmpty || context.read<UserProvider>().currentUser != null) ...[
-              const SizedBox(height: 16),
-              // Yorumlar
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.chat_bubble_outline, color: Theme.of(context).primaryColor),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Yorumlar',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '${_comments.length} yorum',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (context.read<UserProvider>().currentUser != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(25),
-                          border: Border.all(
-                            color: Colors.grey[200]!,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 18,
-                              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                              child: Text(
-                                context.read<UserProvider>().currentUser!.username[0].toUpperCase(),
-                                style: TextStyle(
-                                  color: Theme.of(context).primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: TextField(
-                                controller: _commentController,
-                                decoration: const InputDecoration(
-                                  hintText: 'Yorum yaz...',
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ),
-                            IconButton(
-                              icon: _isAddingComment
-                                  ? SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          Theme.of(context).primaryColor,
-                                        ),
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.send_rounded,
-                                      color: Theme.of(context).primaryColor,
-                                    ),
-                              onPressed: _isAddingComment ? null : _addComment,
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (_isLoadingComments)
-                      const Center(child: CircularProgressIndicator())
-                    else if (_comments.isEmpty)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.chat_bubble_outline,
-                                size: 48,
-                                color: Colors.grey[300],
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'Henüz yorum yapılmamış',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'İlk yorumu sen yap!',
-                                style: TextStyle(
-                                  color: Colors.grey[400],
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    else
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _comments.length,
-                        separatorBuilder: (context, index) => const Divider(height: 24),
-                        itemBuilder: (context, index) {
-                          final comment = _comments[index];
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CircleAvatar(
-                                radius: 18,
-                                backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                                child: Text(
-                                  comment.username?[0].toUpperCase() ?? 'A',
-                                  style: TextStyle(
-                                    color: Theme.of(context).primaryColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          comment.username ?? 'Anonim',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 15,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-                                            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-                                            comment.formattedDate,
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      comment.content,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (context.read<UserProvider>().currentUser?.id == comment.userId)
-                                IconButton(
-                                  icon: const Icon(Icons.more_horiz),
-                                  onPressed: () => _deleteComment(comment),
-                                  color: Colors.grey[400],
-                                ),
-                            ],
-                          );
-                        },
-                      ),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 24),
-          ],
-        ),
       ),
     );
   }
 
-  Widget _buildStatChip({
-    required IconData icon,
-    required String label,
-    required Color backgroundColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: Colors.grey[800]),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey[800],
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    Widget buildRecipeImage() {
+      final imageUrl = _recipe?.imageUrl;
+      if (imageUrl == null || imageUrl.isEmpty) {
+        return Container(
+          width: double.infinity,
+          height: 320,
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
           ),
-        ],
+          child: const Icon(Icons.image, size: 60, color: Colors.grey),
+        );
+      }
+      return ClipRRect(
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+        child: Image.asset(
+          'assets/recipe_images/$imageUrl',
+          width: double.infinity,
+          height: 320,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            width: double.infinity,
+            height: 320,
+            color: Colors.grey[200],
+            child: const Icon(Icons.broken_image, size: 60, color: Colors.redAccent),
+          ),
+        ),
+      );
+    }
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F6FB),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.purple.shade700),
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _recipe == null
+              ? const Center(child: Text('Tarif bulunamadı'))
+              : SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Stack ile görsel, başlık, favori, kullanıcı
+                      Stack(
+                        children: [
+                          buildRecipeImage(),
+                          // Gradient overlay
+                          Positioned(
+                            left: 0, right: 0, bottom: 0,
+                            child: Container(
+                              height: 130,
+                              decoration: BoxDecoration(
+                                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+                                gradient: LinearGradient(
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                  colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Başlık ve kullanıcı
+                          Positioned(
+                            left: 20, bottom: 36,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(_recipe!.title, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.person, color: Colors.white, size: 18),
+                                    const SizedBox(width: 6),
+                                    Text('Tarif Sahibi: ${_recipe!.username}', style: const TextStyle(color: Colors.white, fontSize: 15)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Favori butonu
+                          Positioned(
+                            right: 20, top: 20,
+                            child: Material(
+                              color: Colors.white,
+                              shape: const CircleBorder(),
+                              elevation: 4,
+                              child: IconButton(
+                                icon: Icon(_recipe!.isFavorited ? Icons.favorite : Icons.favorite_border, color: Colors.pink, size: 26),
+                                onPressed: _isFavoriting ? null : _toggleFavorite,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Bilgi kartları ve puanlama
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(child: _infoChip(Icons.timer, '${_recipe!.cookingTime ?? ''} dakika', Colors.blue.shade50, Colors.blue)),
+                                const SizedBox(width: 8),
+                                Expanded(child: _infoChip(Icons.favorite, '${_recipe!.favoriteCount} Favori', Colors.pink.shade50, Colors.pink)),
+                                const SizedBox(width: 8),
+                                Expanded(child: _infoChip(Icons.remove_red_eye, '${_recipe!.views} Görüntülenme', Colors.purple.shade50, Colors.purple)),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            // Ortalama puan
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.yellow.shade50,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.star, color: Colors.amber, size: 22),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    (_recipe!.averageRating != null
+                                        ? _recipe!.averageRating!.toStringAsFixed(1)
+                                        : '0.0'),
+                                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.deepPurple),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '(${_recipe!.ratingCount ?? 0} değerlendirme)',
+                                    style: const TextStyle(fontSize: 15, color: Colors.grey, fontWeight: FontWeight.w500),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            // Kullanıcı puanı
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Sizin puanınız:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: List.generate(5, (index) {
+                                      final userRating = _recipe!.userRating ?? 0;
+                                      return GestureDetector(
+                                        onTap: () {
+                                          _rateRecipe(index + 1);
+                                        },
+                                        child: Icon(
+                                          index < userRating ? Icons.star : Icons.star_border,
+                                          color: Colors.amber,
+                                          size: 28,
+                                        ),
+                                      );
+                                    }),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Malzemeler kartı
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.shopping_basket, color: Colors.orange, size: 22),
+                                const SizedBox(width: 8),
+                                const Text('Malzemeler', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.orange.shade50,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: (_recipe!.ingredients ?? '').split('\n').where((e) => e.trim().isNotEmpty).map((e) => Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 2),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('• ', style: TextStyle(color: Colors.orange, fontSize: 18)),
+                                      Expanded(child: Text(e, style: const TextStyle(fontSize: 16))),
+                                    ],
+                                  ),
+                                )).toList(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Hazırlanış
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        child: Card(
+                          color: Color(0xFFFFCDD2),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            side: BorderSide(color: Colors.red.shade100, width: 1.2),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(18.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.menu_book, color: Colors.deepPurple, size: 24),
+                                    SizedBox(width: 8),
+                                    Text('Hazırlanışı', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19)),
+                                  ],
+                                ),
+                                SizedBox(height: 10),
+                                ...(_recipe!.instructions ?? '')
+                                    .split('\n')
+                                    .where((e) => e.trim().isNotEmpty)
+                                    .toList()
+                                    .asMap()
+                                    .entries
+                                    .map((entry) => Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 6.0),
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Container(
+                                                width: 28,
+                                                height: 28,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.purple.shade50,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                alignment: Alignment.center,
+                                                child: Text(
+                                                  '${entry.key + 1}',
+                                                  style: TextStyle(
+                                                    color: Colors.deepPurple,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(width: 12),
+                                              Expanded(
+                                                child: Text(
+                                                  entry.value,
+                                                  style: TextStyle(fontSize: 16),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // İpuçları
+                      if ((_recipe!.tips ?? '').isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          child: Card(
+                            color: Colors.yellow[50],
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.tips_and_updates, color: Colors.orange, size: 22),
+                                      SizedBox(width: 8),
+                                      Text('Püf Noktalar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange)),
+                                    ],
+                                  ),
+                                  SizedBox(height: 8),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.info_outline, color: Colors.orange),
+                                      const SizedBox(width: 8),
+                                      Expanded(child: Text(_recipe!.tips!, style: const TextStyle(fontSize: 15))),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      // Yorumlar başlığı
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        child: Row(
+                          children: [
+                            Icon(Icons.comment, color: Colors.purple.shade200, size: 24),
+                            SizedBox(width: 8),
+                            Text('Yorumlar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.purple.shade400)),
+                          ],
+                        ),
+                      ),
+                      // Yorum ekleme kutusu
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                        child: Card(
+                          color: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: Colors.purple.shade50,
+                                  child: Icon(Icons.person, color: Colors.purple.shade200),
+                                  radius: 20,
+                                ),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _commentController,
+                                    decoration: InputDecoration(
+                                      hintText: 'Yorumunuzu yazın...',
+                                      border: InputBorder.none,
+                                    ),
+                                    minLines: 1,
+                                    maxLines: 3,
+                                    enabled: !_isAddingComment,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                ElevatedButton(
+                                  onPressed: _isAddingComment ? null : _addComment,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.purple.shade200,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    padding: EdgeInsets.all(10),
+                                    elevation: 0,
+                                  ),
+                                  child: _isAddingComment
+                                      ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                      : Icon(Icons.send, color: Colors.white, size: 20),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Yorumlar listesi
+                      if (_isLoadingComments)
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else if (_comments.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Text('Henüz yorum yok.', style: TextStyle(color: Colors.grey[600])),
+                        )
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount: _comments.length,
+                          itemBuilder: (context, index) {
+                            final comment = _comments[index];
+                            final user = context.read<UserProvider>().currentUser;
+                            final isOwner = user != null && user.id == comment.userId;
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  CircleAvatar(
+                                    backgroundColor: Colors.purple.shade50,
+                                    child: Text(
+                                      (comment.username != null && comment.username!.isNotEmpty)
+                                        ? comment.username![0].toUpperCase()
+                                        : '?',
+                                      style: TextStyle(color: Colors.purple.shade200, fontWeight: FontWeight.bold),
+                                    ),
+                                    radius: 20,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Card(
+                                      color: Colors.white,
+                                      elevation: 2,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(comment.username ?? 'Kullanıcı', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple.shade600, fontSize: 15)),
+                                                const SizedBox(width: 8),
+                                                Text(comment.formattedDate, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                                                if (isOwner) ...[
+                                                  Spacer(),
+                                                  IconButton(
+                                                    icon: Icon(Icons.delete_outline, color: Colors.red[400], size: 20),
+                                                    tooltip: 'Yorumu Sil',
+                                                    padding: EdgeInsets.zero,
+                                                    constraints: BoxConstraints(),
+                                                    onPressed: () async {
+                                                      final confirm = await showDialog<bool>(
+                                                        context: context,
+                                                        builder: (ctx) => AlertDialog(
+                                                          title: Text('Yorumu Sil'),
+                                                          content: Text('Bu yorumu silmek istediğine emin misin?'),
+                                                          actions: [
+                                                            TextButton(child: Text('Vazgeç'), onPressed: () => Navigator.pop(ctx, false)),
+                                                            TextButton(child: Text('Sil', style: TextStyle(color: Colors.red)), onPressed: () => Navigator.pop(ctx, true)),
+                                                          ],
+                                                        ),
+                                                      );
+                                                      if (confirm == true) {
+                                                        _deleteComment(comment);
+                                                      }
+                                                    },
+                                                  ),
+                                                ]
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(comment.content, style: TextStyle(fontSize: 15)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      const SizedBox(height: 28),
+                    ],
+                  ),
+                ),
     );
   }
 }

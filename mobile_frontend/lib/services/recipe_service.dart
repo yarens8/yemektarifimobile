@@ -20,34 +20,34 @@ class RecipeService {
         final url = Uri.parse('$baseUrl/recipes/user/$userId');
         print('Attempt ${retryCount + 1}: Request URL: $url');
 
-        final client = http.Client();
-        try {
-          final response = await client.get(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Connection': 'keep-alive',
-            },
-          ).timeout(timeout);
+        final response = await http.get(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ).timeout(const Duration(seconds: 30)); // Timeout süresini artırdık
 
-          print('Response status code: ${response.statusCode}');
-          if (response.statusCode == 200) {
-            final responseBody = response.body;
-            print('Response body length: ${responseBody.length}');
-            
-            if (responseBody.isEmpty) {
-              throw Exception('Boş yanıt alındı');
-            }
-
-            final List<dynamic> data = json.decode(responseBody);
-            return data.map((json) => Recipe.fromJson(json)).toList();
-          } else {
-            final error = _parseError(response);
-            throw Exception(error);
+        print('Response status code: ${response.statusCode}');
+        if (response.statusCode == 200) {
+          final responseBody = response.body;
+          print('Response body: $responseBody');
+          
+          if (responseBody.isEmpty) {
+            return [];
           }
-        } finally {
-          client.close();
+
+          try {
+            final List<dynamic> jsonData = json.decode(responseBody);
+            print('Parsed JSON data: $jsonData');
+            return jsonData.map((json) => Recipe.fromJson(json)).toList();
+          } catch (e) {
+            print('JSON parsing error: $e');
+            throw Exception('Veri işlenirken hata oluştu: $e');
+          }
+        } else {
+          final error = _parseError(response);
+          throw Exception(error);
         }
       } catch (e) {
         print('Error in attempt ${retryCount + 1}: $e');
@@ -55,7 +55,6 @@ class RecipeService {
         
         if (retryCount < maxRetries - 1) {
           retryCount++;
-          // Exponential backoff: Her denemede bekleme süresini artır
           await Future.delayed(Duration(seconds: retryCount * 2));
           continue;
         }
@@ -482,5 +481,77 @@ class RecipeService {
     } catch (e) {
       throw Exception('Yorum silinirken bir hata oluştu: $e');
     }
+  }
+
+  Future<Recipe> getRecipeById(int id) async {
+    print('Fetching recipe with id: $id');
+    int retryCount = 0;
+    Exception? lastError;
+    
+    while (retryCount < maxRetries) {
+      try {
+        final url = Uri.parse('$baseUrl/recipes/$id');
+        print('Attempt ${retryCount + 1}: Request URL: $url');
+
+        final response = await http.get(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ).timeout(const Duration(seconds: 30));
+
+        print('Response status code: ${response.statusCode}');
+        print('Response headers: ${response.headers}');
+        print('Response body: ${response.body}');
+
+        if (response.statusCode == 200) {
+          final responseBody = response.body;
+          
+          if (responseBody.isEmpty) {
+            throw Exception('Tarif bulunamadı');
+          }
+
+          try {
+            final dynamic jsonData = json.decode(responseBody);
+            print('Parsed JSON data type: ${jsonData.runtimeType}');
+            print('Parsed JSON data: $jsonData');
+            
+            // API yanıtı bir liste olarak geliyorsa ilk elemanı al
+            if (jsonData is List) {
+              if (jsonData.isEmpty) {
+                throw Exception('Tarif bulunamadı');
+              }
+              return Recipe.fromJson(jsonData[0]);
+            }
+            
+            // API yanıtı bir map olarak geliyorsa direkt kullan
+            if (jsonData is Map<String, dynamic>) {
+              return Recipe.fromJson(jsonData);
+            }
+            
+            throw Exception('Geçersiz veri formatı');
+          } catch (e) {
+            print('JSON parsing error: $e');
+            throw Exception('Veri işlenirken hata oluştu: $e');
+          }
+        } else {
+          final error = _parseError(response);
+          throw Exception(error);
+        }
+      } catch (e) {
+        print('Error in attempt ${retryCount + 1}: $e');
+        lastError = e is Exception ? e : Exception(e.toString());
+        
+        if (retryCount < maxRetries - 1) {
+          retryCount++;
+          await Future.delayed(Duration(seconds: retryCount * 2));
+          continue;
+        }
+        break;
+      }
+    }
+    
+    throw lastError ?? Exception('Bağlantı hatası: Sunucuya ulaşılamıyor');
   }
 } 

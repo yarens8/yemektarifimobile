@@ -366,15 +366,19 @@ def add_comment(recipe_id):
         if not user_id or not content:
             return jsonify({'error': 'Kullanıcı ID ve yorum içeriği gerekli'}), 400
 
+        logger.info(f"Yorum ekleme isteği alındı - recipe_id: {recipe_id}, user_id: {user_id}")
         comment = db_service.add_comment(recipe_id, user_id, content)
+        
         if comment:
+            logger.info(f"Yorum başarıyla eklendi: {comment}")
             return jsonify(comment), 201
         else:
+            logger.error("Yorum eklenemedi")
             return jsonify({'error': 'Yorum eklenirken bir hata oluştu'}), 500
 
     except Exception as e:
-        print(f"Error adding comment: {str(e)}")
-        return jsonify({'error': 'Yorum eklenirken bir hata oluştu'}), 500
+        logger.error(f"Yorum eklenirken hata: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/comments/<int:comment_id>', methods=['DELETE'])
 def delete_comment(comment_id):
