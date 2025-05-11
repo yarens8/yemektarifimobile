@@ -2,6 +2,7 @@ import pyodbc
 from database_config import get_connection_string
 import logging
 import re
+import traceback
 
 class DatabaseService:
     def __init__(self):
@@ -57,6 +58,7 @@ class DatabaseService:
     def get_recipes(self, category_id=None):
         """Tüm tarifleri veya belirli bir kategoriye ait tarifleri getirir"""
         try:
+            print("[DEBUG] get_recipes çağrıldı")
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 
@@ -77,13 +79,15 @@ class DatabaseService:
                             r.[tips],
                             r.[image_filename],
                             r.[ingredients_sections],
-                            r.[username],
+                            u.[username],
                             COALESCE(r.[average_rating], 0.0) as average_rating,
                             COALESCE(r.[rating_count], 0) as rating_count
                         FROM [dbo].[Recipe] r
+                        LEFT JOIN [dbo].[User] u ON r.[user_id] = u.[id]
                         WHERE r.[category_id] = ?
                         ORDER BY r.[views] DESC
                     """
+                    print(f"[DEBUG] Kategori ID ile sorgu çalıştırılıyor: {category_id}")
                     cursor.execute(query, category_id)
                 else:
                     query = """
@@ -102,21 +106,43 @@ class DatabaseService:
                             r.[tips],
                             r.[image_filename],
                             r.[ingredients_sections],
-                            r.[username],
+                            u.[username],
                             COALESCE(r.[average_rating], 0.0) as average_rating,
                             COALESCE(r.[rating_count], 0) as rating_count
                         FROM [dbo].[Recipe] r
+                        LEFT JOIN [dbo].[User] u ON r.[user_id] = u.[id]
                         ORDER BY r.[views] DESC
                     """
+                    print("[DEBUG] Tüm tarifler için sorgu çalıştırılıyor")
                     cursor.execute(query)
                 
                 columns = [column[0] for column in cursor.description]
-                recipes = [dict(zip(columns, row)) for row in cursor.fetchall()]
-                print("Recipes from database:", recipes)  # Debug print
+                print(f"[DEBUG] Sütunlar: {columns}")
+                
+                recipes = []
+                for row in cursor.fetchall():
+                    try:
+                        recipe = dict(zip(columns, row))
+                        # Tarih alanlarını string'e çevir
+                        if recipe.get('created_at'):
+                            recipe['created_at'] = recipe['created_at'].isoformat()
+                        recipes.append(recipe)
+                    except Exception as e:
+                        print(f"[DEBUG] Satır dönüştürme hatası: {str(e)}")
+                        continue
+                
+                print(f"[DEBUG] Veritabanından {len(recipes)} tarif alındı")
+                if recipes:
+                    print("[DEBUG] İlk tarif örneği:", {
+                        'id': recipes[0].get('id'),
+                        'title': recipes[0].get('title'),
+                        'ingredients': recipes[0].get('ingredients')[:100] + '...' if recipes[0].get('ingredients') else None
+                    })
                 return recipes
                 
         except Exception as e:
-            self.logger.error(f"Tarifler getirilirken hata: {str(e)}")
+            print(f"[DEBUG] get_recipes hatası: {str(e)}")
+            print(f"[DEBUG] Hata detayı: {traceback.format_exc()}")
             return []
 
     def search_recipes(self, search_term):

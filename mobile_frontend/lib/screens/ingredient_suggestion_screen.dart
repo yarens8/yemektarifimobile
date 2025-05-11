@@ -6,6 +6,7 @@ import '../widgets/recipe_card.dart';
 import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'dart:ui';
+import '../services/auth_service.dart';
 
 class IngredientSuggestionScreen extends StatefulWidget {
   @override
@@ -78,22 +79,27 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
     });
 
     try {
-      print('[DEBUG] Tarif öner API çağrısı başlıyor. Malzemeler: \\_selectedIngredients: \\${_selectedIngredients.toString()}');
+      print('[DEBUG] Tarif öner API çağrısı başlıyor.');
+      print('[DEBUG] Seçili malzemeler: ${_selectedIngredients.toString()}');
+      print('[DEBUG] Token kontrolü: ${await AuthService.getToken()}');
+      
       final recipes = await _recipeService.suggestRecipes(
         ingredients: _selectedIngredients,
-        filters: {},
       );
-      print('[DEBUG] API cevabı geldi. Tarif sayısı: \\${recipes.length}');
+      
+      print('[DEBUG] API cevabı geldi. Tarif sayısı: ${recipes.length}');
+      print('[DEBUG] İlk tarif detayları: ${recipes.isNotEmpty ? recipes.first.toJson() : "Tarif yok"}');
 
       setState(() {
         _suggestedRecipes = recipes;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
       setState(() {
         _isLoading = false;
       });
-      print('[DEBUG] Tarif öner API hatası: \\${e.toString()}');
+      print('[DEBUG] Tarif öner API hatası: $e');
+      print('[DEBUG] Hata stack trace: $stackTrace');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Tarif önerileri alınamadı: $e')),
       );
@@ -186,7 +192,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
-                children: [
+        children: [
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
@@ -230,7 +236,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
             ),
             const SizedBox(height: 32),
             // Kıvrımlı ve dalgalı kenarlı kağıt efekti (gelişmiş)
-            Padding(
+          Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Transform.rotate(
                 angle: -0.04, // Kağıdı hafif sola eğ
@@ -241,12 +247,12 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                     width: double.infinity,
                     alignment: Alignment.topLeft,
                     padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 28),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          children: [
-                            Text(
+              children: [
+                Text(
                               "Malzemeler",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -267,7 +273,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                               builder: (context, constraints) {
                                 final chipWidth = (constraints.maxWidth - 16) / 2;
                                 return Wrap(
-                                  spacing: 8,
+                  spacing: 8,
                                   runSpacing: 10,
                                   children: List.generate(_selectedIngredients.length, (index) {
                                     final ingredient = _selectedIngredients[index];
@@ -284,11 +290,11 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                                         elevation: 2,
                                         shadowColor: Colors.black12,
                                         deleteIcon: Icon(Icons.close, size: 16, color: Colors.pink.shade300),
-                                        onDeleted: () {
-                                          setState(() {
+                      onDeleted: () {
+                        setState(() {
                                             _selectedIngredients.removeAt(index);
-                                          });
-                                        },
+                        });
+                      },
                                       ),
                                     );
                                   }),
@@ -482,7 +488,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                                       style: const TextStyle(fontSize: 15, color: Colors.black87),
                                       borderRadius: BorderRadius.circular(12),
                                       onChanged: (value) {
-                                        setState(() {
+                      setState(() {
                                           _selectedPorsiyon = value!;
                                         });
                                       },
@@ -550,7 +556,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
             Container(
               height: 300,
               color: Colors.white,
-              child: _isLoading
+            child: _isLoading
                   ? const Center(child: CircularProgressIndicator(color: Colors.pink))
                 : _suggestedRecipes.isEmpty
                     ? Center(
@@ -570,8 +576,8 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                           );
                         },
                       ),
-            ),
-          ],
+          ),
+        ],
         ),
       ),
     );

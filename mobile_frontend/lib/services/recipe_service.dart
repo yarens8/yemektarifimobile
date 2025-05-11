@@ -569,23 +569,13 @@ class RecipeService {
           'Authorization': 'Bearer ${await AuthService.getToken()}',
         },
         body: jsonEncode({
-          'ingredients': ingredients,
-          'filters': filters,
+          'selectedIngredients': ingredients,
         }),
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success']) {
-          final List<dynamic> recipesData = data['recipes'];
-          return recipesData.map((recipeData) {
-            final recipe = Recipe.fromJson(recipeData['recipe']);
-            recipe.matchingIngredients = List<String>.from(recipeData['matching_ingredients']);
-            recipe.requiredIngredients = List<String>.from(recipeData['required_ingredients']);
-            recipe.matchCount = recipeData['match_count'];
-            return recipe;
-          }).toList();
-        }
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((recipeData) => Recipe.fromJson(Map<String, dynamic>.from(recipeData))).toList();
       }
       throw Exception('Tarif önerileri alınamadı');
     } catch (e) {

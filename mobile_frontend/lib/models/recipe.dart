@@ -66,7 +66,7 @@ class Recipe {
 
   factory Recipe.fromJson(Map<String, dynamic> json) {
     return Recipe(
-      id: json['id'] ?? 0,
+      id: int.tryParse(json['id'].toString()) ?? 0,
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       ingredients: json['ingredients'] ?? '',
@@ -78,25 +78,25 @@ class Recipe {
       prepTime: json['prep_time'],
       tips: json['tips'],
       difficulty: json['difficulty'],
-      userId: json['user_id'] ?? 0,
+      userId: int.tryParse(json['user_id'].toString()) ?? 0,
       username: json['username'] ?? 'Anonim',
-      categoryId: json['category_id'] ?? 0,
-      isFavorited: json['is_favorited'] ?? false,
-      favoriteCount: json['favorite_count'] ?? 0,
-      commentCount: json['comment_count'] ?? 0,
-      views: json['views'] ?? 0,
+      categoryId: int.tryParse(json['category_id'].toString()) ?? 0,
+      isFavorited: json['is_favorited'] == true || json['is_favorited'] == 'true',
+      favoriteCount: int.tryParse(json['favorite_count'].toString()) ?? 0,
+      commentCount: int.tryParse(json['comment_count'].toString()) ?? 0,
+      views: int.tryParse(json['views'].toString()) ?? 0,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : DateTime.now(),
-      averageRating: (json['average_rating'] ?? 0.0).toDouble(),
-      ratingCount: json['rating_count'] ?? 0,
-      userRating: json['user_rating'],
+      averageRating: double.tryParse(json['average_rating'].toString()) ?? 0.0,
+      ratingCount: int.tryParse(json['rating_count'].toString()) ?? 0,
+      userRating: json['user_rating'] != null ? int.tryParse(json['user_rating'].toString()) : null,
       matchingIngredients: json['matching_ingredients'] != null 
           ? List<String>.from(json['matching_ingredients'])
           : null,
       requiredIngredients: json['required_ingredients'] != null 
           ? List<String>.from(json['required_ingredients'])
           : null,
-      matchCount: json['match_count'] ?? 0,
+      matchCount: json['match_count'] != null ? int.tryParse(json['match_count'].toString()) : null,
       imageFilename: json['image_filename'] ?? '',
     );
   }

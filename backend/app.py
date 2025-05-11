@@ -5,8 +5,12 @@ import logging
 from decimal import Decimal
 import json
 from datetime import datetime
-from flask_jwt_extended import jwt_required, JWTManager
+from flask_jwt_extended import jwt_required, JWTManager, create_access_token, get_jwt_identity
 import traceback
+from datetime import timedelta
+from flask_jwt_extended.exceptions import NoAuthorizationError
+from flask import make_response
+import pyodbc
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -20,11 +24,8 @@ app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder  # Özel JSON encoder'ı ayarla
 
 # JWT ayarları
-app.config['JWT_SECRET_KEY'] = 'super-secret-key'  # Bunu güçlü bir anahtar ile değiştir!
-app.config['JWT_TOKEN_LOCATION'] = ['headers']
-app.config['JWT_HEADER_NAME'] = 'Authorization'
-app.config['JWT_HEADER_TYPE'] = 'Bearer'
-
+app.config['JWT_SECRET_KEY'] = 'gizli-anahtar-123'  # Güvenli bir anahtar kullanın
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=1)
 jwt = JWTManager(app)
 
 # CORS ayarlarını güncelle
@@ -101,10 +102,14 @@ def login():
         
         if error:
             return jsonify({'error': error}), 401
-            
+
+        # JWT token oluştur
+        access_token = create_access_token(identity={'user_id': user['id'], 'username': user['username']})
+
         return jsonify({
             'message': 'Giriş başarılı',
-            'user': user
+            'user': user,
+            'access_token': access_token
         })
         
     except Exception as e:
@@ -412,73 +417,44 @@ def delete_comment(comment_id):
 
 # Mobil uygulama için malzeme eşleştirme API endpoint'i
 @app.route('/api/mobile/suggest_recipes', methods=['POST'])
-@jwt_required()
-def mobile_suggest_recipes():
-    try:
-        print('API çağrısı geldi')
-        data = request.get_json()
-        print('Gelen veri:', data)
-        selected_ingredients = set(ingredient.strip().lower() for ingredient in data.get('ingredients', []))
-        print('Seçilen malzemeler:', selected_ingredients)
-        filters = data.get('filters', {})
-        print('Filtreler:', filters)
-        recipes_query = Recipe.query
-        print('Recipe query oluşturuldu')
-        # Kategori filtresi
-        if filters.get('category_id'):
-            recipes_query = recipes_query.filter_by(category_id=filters['category_id'])
-        # Pişirme süresi filtresi
-        if filters.get('max_cooking_time'):
-            max_time = int(filters['max_cooking_time'])
-            recipes_query = recipes_query.filter(
-                Recipe.cooking_time.ilike(f'%{max_time} dakika%') |
-                Recipe.cooking_time.ilike(f'%{max_time}dk%')
-            )
-        # Porsiyon filtresi
-        if filters.get('serving_size'):
-            serving_size = filters['serving_size']
-            print('Porsiyon filtresi:', serving_size)
-            if serving_size == '1-2':
-                recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%1-2%') | Recipe.serving_size.ilike('%1%') | Recipe.serving_size.ilike('%2%'))
-            elif serving_size == '3-4':
-                recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%3-4%') | Recipe.serving_size.ilike('%3%') | Recipe.serving_size.ilike('%4%'))
-            elif serving_size == '5-6':
-                recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%5-6%') | Recipe.serving_size.ilike('%5%') | Recipe.serving_size.ilike('%6%'))
-            elif serving_size == '6+':
-                recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%6%') | Recipe.serving_size.ilike('%7%') | Recipe.serving_size.ilike('%8%'))
-        suggestions = []
-        print('Tüm tarifler çekiliyor...')
-        for recipe in recipes_query.all():
-            print('Tarif:', recipe.title if hasattr(recipe, 'title') else recipe)
-            recipe_ingredients_text = recipe.ingredients.lower()
-            matching_ingredients = set()
-            for ingredient in selected_ingredients:
-                if any(ingredient in recipe_ing.lower() for recipe_ing in recipe.ingredients.split('\n')):
-                    matching_ingredients.add(ingredient)
-            print('Eşleşen malzemeler:', matching_ingredients)
-            if matching_ingredients:
-                all_recipe_ingredients = [ing.strip() for ing in recipe.ingredients.split('\n') if ing.strip()]
-                required_ingredients = [ing for ing in all_recipe_ingredients 
-                                     if not any(selected.lower() in ing.lower() 
-                                              for selected in selected_ingredients)]
-                suggestions.append({
-                    'recipe': recipe.to_dict(),
-                    'matching_ingredients': sorted(list(matching_ingredients)),
-                    'required_ingredients': required_ingredients,
-                    'match_count': len(matching_ingredients)
-                })
-        print('Öneri sayısı:', len(suggestions))
-        return jsonify({
-            'success': True,
-            'recipes': suggestions
-        })
-    except Exception as e:
-        print('HATA:', e)
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'message': str(e)
-        }), 400
+def suggest_recipes():
+    data = request.get_json(force=True)
+    selected_ingredients = data.get('selectedIngredients', [])
+    if not selected_ingredients:
+        return jsonify([])
+
+    # Güvenli LIKE sorgusu için parametreli query
+    like_clauses = []
+    params = []
+    for ing in selected_ingredients:
+        like_clauses.append("ingredients LIKE ?")
+        params.append(f"%{ing}%")
+    where_sql = " OR ".join(like_clauses)
+
+    query = f"SELECT * FROM [YemekTarifleri].[dbo].[Recipe] WHERE {where_sql}"
+
+    conn = pyodbc.connect(r'Driver={SQL Server};Server=YAREN\SQLEXPRESS;Database=YemekTarifleri;Trusted_Connection=yes;')
+    cursor = conn.cursor()
+    cursor.execute(query, params)
+    columns = [column[0] for column in cursor.description]
+    results = []
+    for row in cursor.fetchall():
+        recipe = dict(zip(columns, row))
+        # Tüm alanları string'e çevir
+        for k, v in recipe.items():
+            if v is not None:
+                recipe[k] = str(v)
+            else:
+                recipe[k] = ""
+        results.append(recipe)
+    conn.close()
+    print("MOBILE SUGGEST RESPONSE:", results[:5])
+    return jsonify(results[:30])
+
+@app.errorhandler(NoAuthorizationError)
+def handle_auth_error(e):
+    print('JWT HATASI:', str(e))
+    return make_response(jsonify({'error': 'JWT HATASI', 'detail': str(e)}), 401)
 
 if __name__ == '__main__':
     try:
