@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import '../models/recipe.dart';
 import '../models/comment.dart';
 import '../config/api_config.dart';
+import '../utils/api_constants.dart';
+import '../services/auth_service.dart';
 
 class RecipeService {
   // API'nin base URL'i
@@ -553,5 +555,41 @@ class RecipeService {
     }
     
     throw lastError ?? Exception('Bağlantı hatası: Sunucuya ulaşılamıyor');
+  }
+
+  Future<List<Recipe>> suggestRecipes({
+    required List<String> ingredients,
+    Map<String, dynamic>? filters,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/mobile/suggest_recipes'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${await AuthService.getToken()}',
+        },
+        body: jsonEncode({
+          'ingredients': ingredients,
+          'filters': filters,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success']) {
+          final List<dynamic> recipesData = data['recipes'];
+          return recipesData.map((recipeData) {
+            final recipe = Recipe.fromJson(recipeData['recipe']);
+            recipe.matchingIngredients = List<String>.from(recipeData['matching_ingredients']);
+            recipe.requiredIngredients = List<String>.from(recipeData['required_ingredients']);
+            recipe.matchCount = recipeData['match_count'];
+            return recipe;
+          }).toList();
+        }
+      }
+      throw Exception('Tarif önerileri alınamadı');
+    } catch (e) {
+      throw Exception('Tarif önerileri alınırken bir hata oluştu: $e');
+    }
   }
 } 

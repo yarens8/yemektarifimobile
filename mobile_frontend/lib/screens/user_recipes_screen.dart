@@ -86,9 +86,9 @@ class _UserRecipesScreenState extends State<UserRecipesScreen> {
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
-                                  child: recipe.images.isNotEmpty
+                                  child: recipe.imageFilename.isNotEmpty
                                       ? Image.asset(
-                                          'assets/recipe_images/${recipe.images.first.imageUrl}',
+                                          'assets/recipe_images/${recipe.imageFilename}',
                                           fit: BoxFit.cover,
                                           errorBuilder: (context, error, stackTrace) {
                                             return Container(

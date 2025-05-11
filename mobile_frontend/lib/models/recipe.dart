@@ -6,9 +6,16 @@ import 'package:intl/intl.dart';
 class Recipe {
   final int id;
   final String title;
-  final String? description;
+  final String description;
+  final String ingredients;
+  final String instructions;
   final String? imageUrl;
   final List<RecipeImage> images;
+  final String? servingSize;
+  final String? cookingTime;
+  final String? prepTime;
+  final String? tips;
+  final String? difficulty;
   final int userId;
   final String username;
   final int categoryId;
@@ -16,23 +23,29 @@ class Recipe {
   final int favoriteCount;
   final int commentCount;
   final int views;
-  final String? cookingTime;
-  final String? ingredients;
-  final String? instructions;
-  final String? tips;
-  final String? servingSize;
-  final String? difficulty;
-  final DateTime? createdAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
   final double averageRating;
   final int ratingCount;
   final int? userRating;
+  List<String>? matchingIngredients;
+  List<String>? requiredIngredients;
+  int? matchCount;
+  final String imageFilename;
 
   Recipe({
     required this.id,
     required this.title,
-    this.description,
+    required this.description,
+    required this.ingredients,
+    required this.instructions,
     this.imageUrl,
     required this.images,
+    this.servingSize,
+    this.cookingTime,
+    this.prepTime,
+    this.tips,
+    this.difficulty,
     required this.userId,
     required this.username,
     required this.categoryId,
@@ -40,106 +53,52 @@ class Recipe {
     this.favoriteCount = 0,
     this.commentCount = 0,
     this.views = 0,
-    this.cookingTime,
-    this.ingredients,
-    this.instructions,
-    this.tips,
-    this.servingSize,
-    this.difficulty,
-    this.createdAt,
+    required this.createdAt,
+    required this.updatedAt,
     this.averageRating = 0.0,
     this.ratingCount = 0,
     this.userRating,
+    this.matchingIngredients,
+    this.requiredIngredients,
+    this.matchCount,
+    this.imageFilename = '',
   });
 
   factory Recipe.fromJson(Map<String, dynamic> json) {
-    print('Parsing recipe JSON: $json');
-
-    // Güvenli string dönüşümü
-    String safeString(dynamic value, [String defaultValue = '']) {
-      if (value == null) return defaultValue;
-      return value.toString();
-    }
-
-    // Güvenli int dönüşümü
-    int safeInt(dynamic value, [int defaultValue = 0]) {
-      if (value == null) return defaultValue;
-      if (value is int) return value;
-      if (value is String) return int.tryParse(value) ?? defaultValue;
-      return defaultValue;
-    }
-
-    // Güvenli bool dönüşümü
-    bool safeBool(dynamic value, [bool defaultValue = false]) {
-      if (value == null) return defaultValue;
-      if (value is bool) return value;
-      if (value is int) return value != 0;
-      if (value is String) return value.toLowerCase() == 'true';
-      return defaultValue;
-    }
-
-    DateTime? parsedDate;
-    if (json['created_at'] != null) {
-      try {
-        parsedDate = DateTime.parse(json['created_at'].toString());
-      } catch (e) {
-        print('Date parsing error: $e');
-      }
-    }
-
-    // Decimal değerleri float'a dönüştür
-    double parseDecimal(dynamic value) {
-      if (value == null) return 0.0;
-      if (value is int) return value.toDouble();
-      if (value is double) return value;
-      if (value is String) return double.tryParse(value) ?? 0.0;
-      return 0.0;
-    }
-
-    // Liste dönüşümü için güvenli metod
-    List<RecipeImage> parseImages(dynamic imagesData) {
-      if (imagesData == null) return [];
-      if (imagesData is! List) return [];
-      return imagesData.map((image) => RecipeImage.fromJson(image is Map<String, dynamic> ? image : {})).toList();
-    }
-
-    try {
-      return Recipe(
-        id: safeInt(json['id']),
-        title: safeString(json['title'], 'İsimsiz Tarif'),
-        description: safeString(json['description']),
-        imageUrl: safeString(json['image_filename']),
-        images: parseImages(json['images']),
-        userId: safeInt(json['user_id']),
-        username: safeString(json['username'], 'Anonim'),
-        categoryId: safeInt(json['category_id']),
-        isFavorited: safeBool(json['is_favorited']),
-        favoriteCount: safeInt(json['favorite_count']),
-        commentCount: safeInt(json['comment_count']),
-        views: safeInt(json['views']),
-        cookingTime: safeString(json['cooking_time'], '30 dakika'),
-        ingredients: safeString(json['ingredients']),
-        instructions: safeString(json['instructions']),
-        tips: safeString(json['tips']),
-        servingSize: safeString(json['serving_size']),
-        difficulty: safeString(json['difficulty']),
-        createdAt: parsedDate,
-        averageRating: parseDecimal(json['average_rating']),
-        ratingCount: safeInt(json['rating_count']),
-        userRating: json['user_rating'] != null ? safeInt(json['user_rating']) : null,
-      );
-    } catch (e) {
-      print('Error parsing recipe: $e');
-      // Minimum gerekli alanlarla bir Recipe objesi döndür
-      return Recipe(
-        id: safeInt(json['id']),
-        title: safeString(json['title'], 'Bilinmeyen Tarif'),
-        images: [],
-        userId: safeInt(json['user_id']),
-        username: safeString(json['username'], 'Anonim'),
-        categoryId: safeInt(json['category_id']),
-      );
-    }
+    return Recipe(
+      id: json['id'] ?? 0,
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      ingredients: json['ingredients'] ?? '',
+      instructions: json['instructions'] ?? '',
+      imageUrl: json['image_url'],
+      images: (json['images'] as List<dynamic>?)?.map((image) => RecipeImage.fromJson(image)).toList() ?? [],
+      servingSize: json['serving_size'],
+      cookingTime: json['cooking_time'],
+      prepTime: json['prep_time'],
+      tips: json['tips'],
+      difficulty: json['difficulty'],
+      userId: json['user_id'] ?? 0,
+      username: json['username'] ?? 'Anonim',
+      categoryId: json['category_id'] ?? 0,
+      isFavorited: json['is_favorited'] ?? false,
+      favoriteCount: json['favorite_count'] ?? 0,
+      commentCount: json['comment_count'] ?? 0,
+      views: json['views'] ?? 0,
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : DateTime.now(),
+      averageRating: (json['average_rating'] ?? 0.0).toDouble(),
+      ratingCount: json['rating_count'] ?? 0,
+      userRating: json['user_rating'],
+      matchingIngredients: json['matching_ingredients'] != null 
+          ? List<String>.from(json['matching_ingredients'])
+          : null,
+      requiredIngredients: json['required_ingredients'] != null 
+          ? List<String>.from(json['required_ingredients'])
+          : null,
+      matchCount: json['match_count'] ?? 0,
+      imageFilename: json['image_filename'] ?? '',
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -147,37 +106,68 @@ class Recipe {
       'id': id,
       'title': title,
       'description': description,
-      'image_filename': imageUrl,
+      'ingredients': ingredients,
+      'instructions': instructions,
+      'image_url': imageUrl,
+      'images': images.map((image) => image.toJson()).toList(),
+      'serving_size': servingSize,
+      'cooking_time': cookingTime,
+      'prep_time': prepTime,
+      'tips': tips,
+      'difficulty': difficulty,
       'user_id': userId,
       'username': username,
       'category_id': categoryId,
+      'is_favorited': isFavorited,
+      'favorite_count': favoriteCount,
+      'comment_count': commentCount,
       'views': views,
-      'cooking_time': cookingTime,
-      'ingredients': ingredients,
-      'instructions': instructions,
-      'tips': tips,
-      'serving_size': servingSize,
-      'difficulty': difficulty,
-      'created_at': createdAt?.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+      'average_rating': averageRating,
+      'rating_count': ratingCount,
+      'user_rating': userRating,
+      'matching_ingredients': matchingIngredients,
+      'required_ingredients': requiredIngredients,
+      'match_count': matchCount,
+      'image_filename': imageFilename,
     };
   }
 }
 
 class RecipeImage {
   final int id;
+  final int recipeId;
   final String imageUrl;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   RecipeImage({
     required this.id,
+    required this.recipeId,
     required this.imageUrl,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   factory RecipeImage.fromJson(Map<String, dynamic> json) {
-    String url = json['image_url'] ?? json['imageUrl'] ?? json['url'] ?? '';
     return RecipeImage(
-      id: json['id'] ?? 0,
-      imageUrl: url,
+      id: json['id'],
+      recipeId: json['recipe_id'],
+      imageUrl: json['image_url'],
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'recipe_id': recipeId,
+      'image_url': imageUrl,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
   }
 }
 

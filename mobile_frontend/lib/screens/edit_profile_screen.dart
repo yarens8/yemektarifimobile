@@ -61,12 +61,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           final userProvider = context.read<UserProvider>();
           final currentUser = userProvider.currentUser;
           if (currentUser != null) {
-            final updatedUser = User(
-              id: currentUser.id,
-              username: currentUser.username,
-              email: currentUser.email,
-              profileImage: result['photoUrl'],
-            );
+           final updatedUser = User(
+            id: currentUser.id,
+            username: currentUser.username,
+            email: currentUser.email,
+            profileImage: result['photoUrl'],
+            createdAt: currentUser.createdAt,
+            updatedAt: DateTime.now(),
+            appearance: currentUser.appearance,
+          );
             userProvider.setUser(updatedUser);
           }
 
@@ -414,7 +417,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ? FileImage(_imageFile!) 
                       : (context.watch<UserProvider>().currentUser?.profileImage != null
                           ? NetworkImage(context.watch<UserProvider>().currentUser!.profileImage!)
-                          : null) as ImageProvider?,
+                          : const AssetImage('assets/default_profile.png') as ImageProvider),
                     child: (_imageFile == null && context.watch<UserProvider>().currentUser?.profileImage == null)
                       ? const Icon(
                           Icons.person,

@@ -35,9 +35,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         _recipe = widget.recipe;
         _isLoading = false;
       });
-      if (_recipe!.imageUrl != null && _recipe!.imageUrl!.isNotEmpty) {
+      if (_recipe!.imageFilename != null && _recipe!.imageFilename!.isNotEmpty) {
         print('Tarif: ${_recipe!.title}');
-        print('Resim dosya adı: ${_recipe!.imageUrl}');
+        print('Resim dosya adı: ${_recipe!.imageFilename}');
       }
       _loadUserRating();
       _loadComments();
@@ -66,7 +66,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               id: _recipe!.id,
               title: _recipe!.title,
               description: _recipe!.description,
-              imageUrl: _recipe!.imageUrl,
+              imageFilename: _recipe!.imageFilename,
               images: _recipe!.images,
               userId: _recipe!.userId,
               username: _recipe!.username,
@@ -82,6 +82,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               servingSize: _recipe!.servingSize,
               difficulty: _recipe!.difficulty,
               createdAt: _recipe!.createdAt,
+              updatedAt: _recipe!.updatedAt,
               averageRating: _recipe!.averageRating,
               ratingCount: _recipe!.ratingCount,
               userRating: rating,
@@ -271,7 +272,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               id: recipe.id,
               title: recipe.title,
               description: recipe.description,
-              imageUrl: recipe.imageUrl,
+              imageFilename: recipe.imageFilename,
               images: recipe.images,
               userId: recipe.userId,
               username: recipe.username,
@@ -287,6 +288,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               servingSize: recipe.servingSize,
               difficulty: recipe.difficulty,
               createdAt: recipe.createdAt,
+              updatedAt: recipe.updatedAt,
             );
           });
         }
@@ -329,7 +331,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 id: _recipe!.id,
                 title: _recipe!.title,
                 description: _recipe!.description,
-                imageUrl: _recipe!.imageUrl,
+                imageFilename: _recipe!.imageFilename,
                 images: _recipe!.images,
                 userId: _recipe!.userId,
                 username: _recipe!.username,
@@ -345,6 +347,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 servingSize: _recipe!.servingSize,
                 difficulty: _recipe!.difficulty,
                 createdAt: _recipe!.createdAt,
+                updatedAt: _recipe!.updatedAt,
                 averageRating: result['average_rating'].toDouble(),
                 ratingCount: result['rating_count'],
                 userRating: rating,
@@ -375,7 +378,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
-        children: [
+                children: [
           Icon(icon, color: iconColor, size: 18),
           const SizedBox(width: 6),
           Expanded(
@@ -395,8 +398,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     Widget buildRecipeImage() {
-      final imageUrl = _recipe?.imageUrl;
-      if (imageUrl == null || imageUrl.isEmpty) {
+      final imageFilename = _recipe?.imageFilename;
+      if (imageFilename == null || imageFilename.isEmpty) {
         return Container(
           width: double.infinity,
           height: 320,
@@ -410,7 +413,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       return ClipRRect(
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
         child: Image.asset(
-          'assets/recipe_images/$imageUrl',
+          'assets/recipe_images/$imageFilename',
           width: double.infinity,
           height: 320,
           fit: BoxFit.cover,
@@ -465,8 +468,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                               children: [
                                 Text(_recipe!.title, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 6),
-                                Row(
-                                  children: [
+        Row(
+          children: [
                                     const Icon(Icons.person, color: Colors.white, size: 18),
                                     const SizedBox(width: 6),
                                     Text('Tarif Sahibi: ${_recipe!.username}', style: const TextStyle(color: Colors.white, fontSize: 15)),
@@ -524,7 +527,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.deepPurple),
                                   ),
                                   const SizedBox(width: 6),
-                                  Text(
+            Text(
                                     '(${_recipe!.ratingCount ?? 0} değerlendirme)',
                                     style: const TextStyle(fontSize: 15, color: Colors.grey, fontWeight: FontWeight.w500),
                                   ),
@@ -560,25 +563,25 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     }),
                                   ),
                                 ],
-                              ),
-                            ),
-                          ],
-                        ),
+              ),
+            ),
+          ],
+        ),
                       ),
                       // Malzemeler kartı
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
                             Row(
                               children: [
                                 const Icon(Icons.shopping_basket, color: Colors.orange, size: 22),
                                 const SizedBox(width: 8),
                                 const Text('Malzemeler', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                               ],
-                            ),
-                            const SizedBox(height: 8),
+        ),
+        const SizedBox(height: 8),
                             Container(
                               width: double.infinity,
                               decoration: BoxDecoration(
@@ -635,8 +638,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     .map((entry) => Padding(
                                           padding: const EdgeInsets.symmetric(vertical: 6.0),
                                           child: Row(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
                                               Container(
                                                 width: 28,
                                                 height: 28,
@@ -647,11 +650,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                                 alignment: Alignment.center,
                                                 child: Text(
                                                   '${entry.key + 1}',
-                                                  style: TextStyle(
+          style: TextStyle(
                                                     color: Colors.deepPurple,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
                                               ),
                                               SizedBox(width: 12),
                                               Expanded(
@@ -690,8 +693,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                   ),
                                   SizedBox(height: 8),
                                   Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
                                       const Icon(Icons.info_outline, color: Colors.orange),
                                       const SizedBox(width: 8),
                                       Expanded(child: Text(_recipe!.tips!, style: const TextStyle(fontSize: 15))),
@@ -787,7 +790,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                 children: [
                                   CircleAvatar(
                                     backgroundColor: Colors.purple.shade50,
-                                    child: Text(
+          child: Text(
                                       (comment.username != null && comment.username!.isNotEmpty)
                                         ? comment.username![0].toUpperCase()
                                         : '?',
@@ -843,9 +846,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                           ],
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                ],
+          ),
+        ),
+      ],
                               ),
                             );
                           },

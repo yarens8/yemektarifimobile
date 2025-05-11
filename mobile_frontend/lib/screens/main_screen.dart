@@ -3,6 +3,7 @@ import 'home_screen.dart';
 import 'search_screen.dart';
 import 'categories_screen.dart';
 import 'profile_screen.dart';
+import 'ingredient_suggestion_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -18,6 +19,7 @@ class _MainScreenState extends State<MainScreen> {
     const HomeScreen(),
     SearchScreen(),
     const CategoriesScreen(),
+    IngredientSuggestionScreen(),
     const ProfileScreen(),
   ];
 
@@ -47,6 +49,10 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.category),
             label: 'Kategoriler',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.restaurant_menu),
+            label: 'Malzemeler',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),

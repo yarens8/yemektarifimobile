@@ -4,6 +4,8 @@ import '../services/recipe_service.dart';
 import '../models/recipe.dart';
 import '../widgets/recipe_card.dart';
 import 'dart:math' as math;
+import 'package:flutter/rendering.dart';
+import 'dart:ui';
 
 class IngredientSuggestionScreen extends StatefulWidget {
   @override
@@ -67,6 +69,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lütfen en az bir malzeme ekleyin!')),
       );
+      print('[DEBUG] Butona basıldı ama hiç malzeme yok.');
       return;
     }
 
@@ -75,10 +78,12 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
     });
 
     try {
+      print('[DEBUG] Tarif öner API çağrısı başlıyor. Malzemeler: \\_selectedIngredients: \\${_selectedIngredients.toString()}');
       final recipes = await _recipeService.suggestRecipes(
         ingredients: _selectedIngredients,
         filters: {},
       );
+      print('[DEBUG] API cevabı geldi. Tarif sayısı: \\${recipes.length}');
 
       setState(() {
         _suggestedRecipes = recipes;
@@ -88,6 +93,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
       setState(() {
         _isLoading = false;
       });
+      print('[DEBUG] Tarif öner API hatası: \\${e.toString()}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Tarif önerileri alınamadı: $e')),
       );
@@ -223,80 +229,91 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
               ),
             ),
             const SizedBox(height: 32),
-            // Flutter ile çizilmiş defter ve ortasında malzeme çipleri
-            SizedBox(
-              height: 320,
-              child: Center(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Defter gövdesi
-                    Container(
-                      width: MediaQuery.of(context).size.width * 0.88,
-                      height: 220,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF8F0), // Hafif krem arka plan
-                        borderRadius: BorderRadius.circular(32),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 18,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                        border: Border.all(color: Colors.pink.shade100, width: 2),
-                      ),
-                      child: CustomPaint(
-                        painter: _NotebookLinesPainter(),
-                        child: const SizedBox.expand(),
-                      ),
-                    ),
-                    // Malzeme çipleri defterin ortasında
-                    if (_selectedIngredients.isNotEmpty)
-                      Positioned(
-                        top: 90,
-                        left: 0,
-                        right: 0,
-                        child: SizedBox(
-                          height: 44,
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: List.generate(_selectedIngredients.length, (index) {
-                                final ingredient = _selectedIngredients[index];
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                                  child: Chip(
-                                    avatar: Text(_ingredientEmoji(ingredient), style: const TextStyle(fontSize: 18)),
-                                    label: Text(
-                                      ingredient.length > 10 ? ingredient.substring(0, 10) + '…' : ingredient,
-                                      style: const TextStyle(fontSize: 14, color: Colors.pink, fontWeight: FontWeight.w600),
-                                    ),
-                                    backgroundColor: Colors.white,
-                                    deleteIcon: Icon(Icons.close, size: 16, color: Colors.white),
-                                    onDeleted: () {
-                                      setState(() {
-                                        _selectedIngredients.removeAt(index);
-                                      });
-                                    },
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                    elevation: 2,
-                                    shadowColor: Colors.black12,
-                                  ),
+            // Kıvrımlı ve dalgalı kenarlı kağıt efekti (gelişmiş)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Transform.rotate(
+                angle: -0.04, // Kağıdı hafif sola eğ
+                child: CustomPaint(
+                  painter: _CurvedPaperPainterV2(),
+                  child: Container(
+                    height: 220,
+                    width: double.infinity,
+                    alignment: Alignment.topLeft,
+                    padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 28),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              "Malzemeler",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                                color: Colors.pink.shade400,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text("📝", style: TextStyle(fontSize: 20)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        if (_selectedIngredients.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final chipWidth = (constraints.maxWidth - 16) / 2;
+                                return Wrap(
+                                  spacing: 8,
+                                  runSpacing: 10,
+                                  children: List.generate(_selectedIngredients.length, (index) {
+                                    final ingredient = _selectedIngredients[index];
+                                    return SizedBox(
+                                      width: chipWidth,
+                                      child: Chip(
+                                        avatar: Text(_ingredientEmoji(ingredient), style: const TextStyle(fontSize: 18)),
+                                        label: Text(
+                                          ingredient.length > 10 ? ingredient.substring(0, 10) + '…' : ingredient,
+                                          style: const TextStyle(fontSize: 14, color: Colors.pink, fontWeight: FontWeight.w600),
+                                        ),
+                                        backgroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        elevation: 2,
+                                        shadowColor: Colors.black12,
+                                        deleteIcon: Icon(Icons.close, size: 16, color: Colors.pink.shade300),
+                                        onDeleted: () {
+                                          setState(() {
+                                            _selectedIngredients.removeAt(index);
+                                          });
+                                        },
+                                      ),
+                                    );
+                                  }),
                                 );
-                              }),
+                              },
                             ),
                           ),
-                        ),
-                      ),
-                  ],
+                        if (_selectedIngredients.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16.0),
+                            child: Text(
+                              "Malzeme ekleyin ve tarif önerilerini görün!",
+                              style: TextStyle(color: Colors.pink.shade200, fontSize: 15, fontWeight: FontWeight.w500),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 24),
             // Tarif filtreleri kartı
-          Padding(
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 decoration: BoxDecoration(
@@ -326,9 +343,9 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                           // Yemek Türü
                           SizedBox(
                             width: 140,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                 Row(
                                   children: const [
                                     Icon(Icons.restaurant_menu, size: 18, color: Colors.pink),
@@ -359,17 +376,17 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                                       style: const TextStyle(fontSize: 15, color: Colors.black87),
                                       borderRadius: BorderRadius.circular(12),
                                       onChanged: (value) {
-                        setState(() {
+                                        setState(() {
                                           _selectedYemekTuru = value!;
-                        });
-                      },
+                                        });
+                                      },
                                       items: _yemekTuruOptions.map((option) {
                                         return DropdownMenuItem<String>(
                                           value: option,
                                           child: Text(option),
-                    );
-                  }).toList(),
-                ),
+                                        );
+                                      }).toList(),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -465,7 +482,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                                       style: const TextStyle(fontSize: 15, color: Colors.black87),
                                       borderRadius: BorderRadius.circular(12),
                                       onChanged: (value) {
-                      setState(() {
+                                        setState(() {
                                           _selectedPorsiyon = value!;
                                         });
                                       },
@@ -533,7 +550,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
             Container(
               height: 300,
               color: Colors.white,
-            child: _isLoading
+              child: _isLoading
                   ? const Center(child: CircularProgressIndicator(color: Colors.pink))
                 : _suggestedRecipes.isEmpty
                     ? Center(
@@ -553,79 +570,92 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                           );
                         },
                       ),
-          ),
-        ],
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _NotebookLinesPainter extends CustomPainter {
+class _CurvedPaperPainterV2 extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // --- 1. Kenarları hafif dalgalı çiz (daha yumuşak) ---
-    final borderPath = Path();
-    borderPath.moveTo(24, 18);
-    // Üst kenar (çok hafif dalga)
-    for (double x = 24; x < size.width - 24; x += 40) {
-      borderPath.quadraticBezierTo(x + 10, 14 + (x % 80 == 0 ? 2 : -2), x + 20, 18);
-    }
-    borderPath.lineTo(size.width - 24, 18);
-    // Sağ kenar (daha düz)
-    borderPath.lineTo(size.width - 24, size.height - 24);
-    // Alt kenar (çok hafif dalga)
-    for (double x = size.width - 24; x > 24; x -= 40) {
-      borderPath.quadraticBezierTo(x - 10, size.height - 20 + (x % 80 == 0 ? -2 : 2), x - 20, size.height - 24);
-    }
-    borderPath.lineTo(24, size.height - 24);
-    // Sol kenar (daha düz)
-    borderPath.lineTo(24, 18);
-    borderPath.close();
-
-    // --- 2. Kenarlara doğru sarımsı/bej degrade (daha sade) ---
-    final gradient = Paint()
-      ..shader = RadialGradient(
-        center: Alignment.center,
-        radius: 0.9,
-        colors: [const Color(0xFFFFF8F0), const Color(0xFFFFEBCB), const Color(0xFFFFF8F0)],
-        stops: [0.7, 0.98, 1.0],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-    canvas.drawPath(borderPath, gradient);
-
-    // --- 3. Sağ ve alt kenarda hafif gölge (daha sade) ---
+    // 1. Kağıt gölgesi
     final shadowPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Colors.transparent, Colors.brown.withOpacity(0.07)],
-      ).createShader(Rect.fromLTWH(size.width * 0.7, size.height * 0.7, size.width * 0.3, size.height * 0.3));
+      ..color = Colors.pink.shade100.withOpacity(0.18)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.7, size.height * 0.7, size.width * 0.3, size.height * 0.3),
-        const Radius.circular(32),
+        Rect.fromLTWH(8, 16, size.width - 8, size.height - 8),
+        const Radius.circular(36),
       ),
       shadowPaint,
     );
 
-    // --- 4. Spiral halkalar (üst kenarda, belirgin ve tam üstte) ---
-    final spiralPaint = Paint()
-      ..color = Colors.grey.shade500
-      ..style = PaintingStyle.fill;
-    const spiralCount = 7;
-    final spiralSpacing = (size.width - 48) / (spiralCount - 1);
-    for (int i = 0; i < spiralCount; i++) {
-      final cx = 24 + i * spiralSpacing;
-      canvas.drawCircle(Offset(cx, 6), 7, spiralPaint);
+    // 2. Kağıt path'i (daha fazla ve küçük dalga)
+    final path = Path();
+    path.moveTo(32, 0);
+    // Üst kenar
+    path.lineTo(size.width - 32, 0);
+    // Sağ kenar
+    path.lineTo(size.width - 16, size.height - 32);
+    // Alt kenar (daha fazla ve küçük dalga)
+    double x = size.width - 16;
+    double y = size.height - 8;
+    bool up = true;
+    while (x > 48) {
+      final nextX = x - 18;
+      final controlX = x - 9;
+      final controlY = y + (up ? 7 : -7);
+      path.quadraticBezierTo(controlX, controlY, nextX, y);
+      x = nextX;
+      up = !up;
     }
+    path.lineTo(48, y);
+    path.quadraticBezierTo(16, y, 32, size.height - 32);
+    // Sol kenar
+    path.lineTo(16, 32);
+    path.quadraticBezierTo(16, 8, 32, 0);
+    path.close();
 
-    // --- 5. Yatay çizgiler ---
+    // 3. Kağıt dolgusu (ortası beyaz, kenarlara doğru çok hafif pembe radial gradient)
+    final paperGradient = RadialGradient(
+      center: Alignment.center,
+      radius: 0.95,
+      colors: [
+        Color(0xFFFFFBFE),
+        Color(0xFFFFF0F6),
+      ],
+      stops: [0.7, 1.0],
+    );
+    final paperPaint = Paint()
+      ..shader = paperGradient.createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawPath(path, paperPaint);
+
+    // 4. Kenarlara hafif pembe stroke
+    final borderPaint = Paint()
+      ..color = Colors.pink.shade100.withOpacity(0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.1;
+    canvas.drawPath(path, borderPaint);
+
+    // 5. Üstte dar ve oval highlight (ışık vurmuş efekti)
+    final highlightPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [Colors.white.withOpacity(0.13), Colors.transparent],
+        begin: Alignment.topCenter,
+        end: Alignment.center,
+      ).createShader(Rect.fromLTWH(size.width * 0.18, 0, size.width * 0.64, size.height * 0.18));
+    canvas.drawOval(Rect.fromLTWH(size.width * 0.18, 0, size.width * 0.64, size.height * 0.13), highlightPaint);
+
+    // 6. Yatay çizgiler
     final linePaint = Paint()
       ..color = Colors.pink.shade100
-      ..strokeWidth = 1.2;
+      ..strokeWidth = 1.1;
     for (int i = 1; i <= 6; i++) {
-      final y = size.height * (i / 7);
-      canvas.drawLine(Offset(40, y), Offset(size.width - 24, y), linePaint);
+      final y = 32 + (size.height - 56) * (i / 7);
+      canvas.drawLine(Offset(48, y), Offset(size.width - 48, y), linePaint);
     }
   }
 

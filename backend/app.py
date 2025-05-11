@@ -5,6 +5,8 @@ import logging
 from decimal import Decimal
 import json
 from datetime import datetime
+from flask_jwt_extended import jwt_required, JWTManager
+import traceback
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -16,6 +18,14 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder  # Özel JSON encoder'ı ayarla
+
+# JWT ayarları
+app.config['JWT_SECRET_KEY'] = 'super-secret-key'  # Bunu güçlü bir anahtar ile değiştir!
+app.config['JWT_TOKEN_LOCATION'] = ['headers']
+app.config['JWT_HEADER_NAME'] = 'Authorization'
+app.config['JWT_HEADER_TYPE'] = 'Bearer'
+
+jwt = JWTManager(app)
 
 # CORS ayarlarını güncelle
 CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE"]}})
@@ -399,6 +409,76 @@ def delete_comment(comment_id):
     except Exception as e:
         print(f"Error deleting comment: {str(e)}")
         return jsonify({'error': 'Yorum silinirken bir hata oluştu'}), 500
+
+# Mobil uygulama için malzeme eşleştirme API endpoint'i
+@app.route('/api/mobile/suggest_recipes', methods=['POST'])
+@jwt_required()
+def mobile_suggest_recipes():
+    try:
+        print('API çağrısı geldi')
+        data = request.get_json()
+        print('Gelen veri:', data)
+        selected_ingredients = set(ingredient.strip().lower() for ingredient in data.get('ingredients', []))
+        print('Seçilen malzemeler:', selected_ingredients)
+        filters = data.get('filters', {})
+        print('Filtreler:', filters)
+        recipes_query = Recipe.query
+        print('Recipe query oluşturuldu')
+        # Kategori filtresi
+        if filters.get('category_id'):
+            recipes_query = recipes_query.filter_by(category_id=filters['category_id'])
+        # Pişirme süresi filtresi
+        if filters.get('max_cooking_time'):
+            max_time = int(filters['max_cooking_time'])
+            recipes_query = recipes_query.filter(
+                Recipe.cooking_time.ilike(f'%{max_time} dakika%') |
+                Recipe.cooking_time.ilike(f'%{max_time}dk%')
+            )
+        # Porsiyon filtresi
+        if filters.get('serving_size'):
+            serving_size = filters['serving_size']
+            print('Porsiyon filtresi:', serving_size)
+            if serving_size == '1-2':
+                recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%1-2%') | Recipe.serving_size.ilike('%1%') | Recipe.serving_size.ilike('%2%'))
+            elif serving_size == '3-4':
+                recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%3-4%') | Recipe.serving_size.ilike('%3%') | Recipe.serving_size.ilike('%4%'))
+            elif serving_size == '5-6':
+                recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%5-6%') | Recipe.serving_size.ilike('%5%') | Recipe.serving_size.ilike('%6%'))
+            elif serving_size == '6+':
+                recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%6%') | Recipe.serving_size.ilike('%7%') | Recipe.serving_size.ilike('%8%'))
+        suggestions = []
+        print('Tüm tarifler çekiliyor...')
+        for recipe in recipes_query.all():
+            print('Tarif:', recipe.title if hasattr(recipe, 'title') else recipe)
+            recipe_ingredients_text = recipe.ingredients.lower()
+            matching_ingredients = set()
+            for ingredient in selected_ingredients:
+                if any(ingredient in recipe_ing.lower() for recipe_ing in recipe.ingredients.split('\n')):
+                    matching_ingredients.add(ingredient)
+            print('Eşleşen malzemeler:', matching_ingredients)
+            if matching_ingredients:
+                all_recipe_ingredients = [ing.strip() for ing in recipe.ingredients.split('\n') if ing.strip()]
+                required_ingredients = [ing for ing in all_recipe_ingredients 
+                                     if not any(selected.lower() in ing.lower() 
+                                              for selected in selected_ingredients)]
+                suggestions.append({
+                    'recipe': recipe.to_dict(),
+                    'matching_ingredients': sorted(list(matching_ingredients)),
+                    'required_ingredients': required_ingredients,
+                    'match_count': len(matching_ingredients)
+                })
+        print('Öneri sayısı:', len(suggestions))
+        return jsonify({
+            'success': True,
+            'recipes': suggestions
+        })
+    except Exception as e:
+        print('HATA:', e)
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 400
 
 if __name__ == '__main__':
     try:

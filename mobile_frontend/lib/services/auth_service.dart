@@ -2,11 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/user.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   // API'nin base URL'i
   static const String baseUrl = 'http://10.0.2.2:5000/api';
   User? _currentUser;
+  static const String _tokenKey = 'auth_token';
 
   // Setter method for currentUser
   void setCurrentUser(User user) {
@@ -210,5 +212,29 @@ class AuthService {
         'message': 'Bir hata oluştu: $e',
       };
     }
+  }
+
+  // Token'ı kaydet
+  static Future<void> saveToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, token);
+  }
+
+  // Token'ı getir
+  static Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_tokenKey);
+  }
+
+  // Token'ı sil
+  static Future<void> deleteToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
+  }
+
+  // Kullanıcı giriş yapmış mı kontrol et
+  static Future<bool> isLoggedIn() async {
+    final token = await getToken();
+    return token != null;
   }
 } 
