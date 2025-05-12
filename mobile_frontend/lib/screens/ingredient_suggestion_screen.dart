@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'dart:ui';
 import '../services/auth_service.dart';
+import '../screens/recipe_detail_screen.dart';
 
 class IngredientSuggestionScreen extends StatefulWidget {
   @override
@@ -264,7 +265,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                             const SizedBox(width: 8),
                             const Text("📝", style: TextStyle(fontSize: 20)),
                           ],
-                        ),
+                ),
                         const SizedBox(height: 16),
                         if (_selectedIngredients.isNotEmpty)
                           Padding(
@@ -296,7 +297,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                         });
                       },
                                       ),
-                                    );
+                    );
                                   }),
                                 );
                               },
@@ -309,7 +310,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                               "Malzeme ekleyin ve tarif önerilerini görün!",
                               style: TextStyle(color: Colors.pink.shade200, fontSize: 15, fontWeight: FontWeight.w500),
                               textAlign: TextAlign.center,
-                            ),
+                ),
                           ),
                       ],
                     ),
@@ -499,7 +500,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                                         );
                                       }).toList(),
                                     ),
-                                  ),
+                ),
                                 ),
                               ],
                             ),
@@ -537,7 +538,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                         colors: [Color(0xFFF857A6), Color(0xFFFF5858)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                      ),
+            ),
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Container(
@@ -573,6 +574,14 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                           return RecipeCard(
                             recipe: recipe,
                             showMatchingIngredients: true,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => RecipeDetailScreen(recipe: recipe),
+                                ),
+                              );
+                            },
                           );
                         },
                       ),

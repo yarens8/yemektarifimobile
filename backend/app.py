@@ -420,19 +420,20 @@ def delete_comment(comment_id):
 def suggest_recipes():
     data = request.get_json(force=True)
     selected_ingredients = data.get('selectedIngredients', [])
+    
+    # Hiç malzeme seçilmezse boş liste döndür
     if not selected_ingredients:
         return jsonify([])
-
-    # Güvenli LIKE sorgusu için parametreli query
+    
     like_clauses = []
     params = []
     for ing in selected_ingredients:
         like_clauses.append("ingredients LIKE ?")
         params.append(f"%{ing}%")
     where_sql = " OR ".join(like_clauses)
-
+    
     query = f"SELECT * FROM [YemekTarifleri].[dbo].[Recipe] WHERE {where_sql}"
-
+    
     conn = pyodbc.connect(r'Driver={SQL Server};Server=YAREN\SQLEXPRESS;Database=YemekTarifleri;Trusted_Connection=yes;')
     cursor = conn.cursor()
     cursor.execute(query, params)
@@ -448,8 +449,8 @@ def suggest_recipes():
                 recipe[k] = ""
         results.append(recipe)
     conn.close()
-    print("MOBILE SUGGEST RESPONSE:", results[:5])
-    return jsonify(results[:30])
+    print("MOBILE SUGGEST RESPONSE:", results[:15])
+    return jsonify(results[:15])
 
 @app.errorhandler(NoAuthorizationError)
 def handle_auth_error(e):
