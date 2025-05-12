@@ -42,7 +42,7 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
     'Tümü', 'Ana Yemek', 'Aperatif', 'Çorba', 'İçecek', 'Kahvaltılık', 'Salata', 'Tatlı'
   ];
   final List<String> _pisirmeSuresiOptions = [
-    'Tümü', '15 dakika veya az', '30 dakika veya az', '45 dakika veya az', '1 saat veya az'
+    'Tümü', '30 dakikadan az', '30-60 dakika', '60 dakikadan fazla'
   ];
   final List<String> _porsiyonOptions = [
     'Tümü', '1-2 Kişilik', '3-4 Kişilik', '5-6 Kişilik', '6+ Kişilik'
@@ -86,6 +86,11 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
       
       final recipes = await _recipeService.suggestRecipes(
         ingredients: _selectedIngredients,
+        filters: {
+          'yemek_turu': _selectedYemekTuru,
+          'pisirme_suresi': _selectedPisirmeSuresi,
+          'porsiyon': _selectedPorsiyon,
+        },
       );
       
       print('[DEBUG] API cevabı geldi. Tarif sayısı: ${recipes.length}');

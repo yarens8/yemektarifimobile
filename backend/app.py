@@ -11,6 +11,7 @@ from datetime import timedelta
 from flask_jwt_extended.exceptions import NoAuthorizationError
 from flask import make_response
 import pyodbc
+import re
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -102,7 +103,7 @@ def login():
         
         if error:
             return jsonify({'error': error}), 401
-
+            
         # JWT token oluştur
         access_token = create_access_token(identity={'user_id': user['id'], 'username': user['username']})
 
@@ -415,42 +416,102 @@ def delete_comment(comment_id):
         print(f"Error deleting comment: {str(e)}")
         return jsonify({'error': 'Yorum silinirken bir hata oluştu'}), 500
 
-# Mobil uygulama için malzeme eşleştirme API endpoint'i
+def extract_minutes(cooking_time):
+    if not cooking_time:
+        return 0
+    # Sadece ilk bulduğu sayıyı alır
+    match = re.search(r'(\d+)', str(cooking_time))
+    if match:
+        return int(match.group(1))
+    return 0
+
 @app.route('/api/mobile/suggest_recipes', methods=['POST'])
 def suggest_recipes():
     data = request.get_json(force=True)
+    print('[DEBUG] Received request data:', data)
+    
     selected_ingredients = data.get('selectedIngredients', [])
-    
-    # Hiç malzeme seçilmezse boş liste döndür
+    filters = data.get('filters', {})
+    print('[DEBUG] Selected ingredients:', selected_ingredients)
+    print('[DEBUG] Filters:', filters)
+
     if not selected_ingredients:
+        print('[DEBUG] No ingredients selected, returning empty list')
         return jsonify([])
-    
+
     like_clauses = []
     params = []
     for ing in selected_ingredients:
         like_clauses.append("ingredients LIKE ?")
         params.append(f"%{ing}%")
-    where_sql = " OR ".join(like_clauses)
-    
+    where_sql = "(" + " OR ".join(like_clauses) + ")"
+
+    # Kategori ve porsiyon filtrelerini SQL'de uygula
+    if filters.get('yemek_turu') and filters['yemek_turu'] != 'Tümü':
+        print('[DEBUG] Adding category filter:', filters['yemek_turu'])
+        where_sql += " AND category_id = ?"
+        kategori_map = {
+            'Ana Yemek': 1,
+            'Aperatif': 5,
+            'Çorba': 2,
+            'İçecek': 6,
+            'Kahvaltılık': 7,
+            'Salata': 3,
+            'Tatlı': 4,
+        }
+        category_id = kategori_map.get(filters['yemek_turu'])
+        print('[DEBUG] Mapped category ID:', category_id)
+        params.append(category_id)
+
+    if filters.get('porsiyon') and filters['porsiyon'] != 'Tümü':
+        print('[DEBUG] Adding serving size filter:', filters['porsiyon'])
+        where_sql += " AND serving_size = ?"
+        params.append(filters['porsiyon'])
+
     query = f"SELECT * FROM [YemekTarifleri].[dbo].[Recipe] WHERE {where_sql}"
-    
-    conn = pyodbc.connect(r'Driver={SQL Server};Server=YAREN\SQLEXPRESS;Database=YemekTarifleri;Trusted_Connection=yes;')
-    cursor = conn.cursor()
-    cursor.execute(query, params)
-    columns = [column[0] for column in cursor.description]
-    results = []
-    for row in cursor.fetchall():
-        recipe = dict(zip(columns, row))
-        # Tüm alanları string'e çevir
-        for k, v in recipe.items():
-            if v is not None:
-                recipe[k] = str(v)
-            else:
-                recipe[k] = ""
-        results.append(recipe)
-    conn.close()
-    print("MOBILE SUGGEST RESPONSE:", results[:15])
-    return jsonify(results[:15])
+    print('[DEBUG] Final SQL query:', query)
+    print('[DEBUG] Query parameters:', params)
+
+    try:
+        conn = pyodbc.connect(r'Driver={SQL Server};Server=YAREN\SQLEXPRESS;Database=YemekTarifleri;Trusted_Connection=yes;')
+        cursor = conn.cursor()
+        cursor.execute(query, params)
+        columns = [column[0] for column in cursor.description]
+        results = []
+        for row in cursor.fetchall():
+            recipe = dict(zip(columns, row))
+            # Tüm alanları string'e çevir
+            for k, v in recipe.items():
+                if v is not None:
+                    recipe[k] = str(v)
+                else:
+                    recipe[k] = ""
+            results.append(recipe)
+        conn.close()
+        print('[DEBUG] Found recipes before time filter:', len(results))
+        print('[DEBUG] First recipe before time filter:', results[0] if results else None)
+            
+        # Pişirme süresi filtresini Python tarafında uygula
+        if filters.get('pisirme_suresi') and filters['pisirme_suresi'] != 'Tümü':
+            sure = filters['pisirme_suresi']
+            filtered = []
+            for recipe in results:
+                minutes = extract_minutes(recipe.get('cooking_time', ''))
+                if sure == '30 dakikadan az' and minutes < 30:
+                    filtered.append(recipe)
+                elif sure == '30-60 dakika' and 30 <= minutes <= 60:
+                    filtered.append(recipe)
+                elif sure == '60 dakikadan fazla' and minutes > 60:
+                    filtered.append(recipe)
+            print(f'[DEBUG] Recipes after time filter ({sure}):', len(filtered))
+            results = filtered
+
+        print('[DEBUG] Found recipes after all filters:', len(results))
+        print('[DEBUG] First recipe after all filters:', results[0] if results else None)
+        return jsonify(results[:15])
+    except Exception as e:
+        print('[DEBUG] Database error:', str(e))
+        return jsonify({'error': str(e)}), 500
 
 @app.errorhandler(NoAuthorizationError)
 def handle_auth_error(e):
