@@ -464,11 +464,27 @@ def suggest_recipes():
         params.append(category_id)
 
     if filters.get('porsiyon') and filters['porsiyon'] != 'Tümü':
-        print('[DEBUG] Adding serving size filter:', filters['porsiyon'])
-        where_sql += " AND serving_size = ?"
-        params.append(filters['porsiyon'])
+        porsiyon = filters['porsiyon']
+        print('[DEBUG] Adding serving size filter:', porsiyon)
+        if porsiyon == '1-2 Kişilik':
+            where_sql += " AND serving_size LIKE ?"
+            params.append('%1-2%')
+        elif porsiyon == '3-4 Kişilik':
+            where_sql += " AND serving_size LIKE ?"
+            params.append('%3-4%')
+        elif porsiyon == '5-6 Kişilik':
+            where_sql += " AND serving_size LIKE ?"
+            params.append('%5-6%')
+        elif porsiyon == '6+ Kişilik':
+            where_sql += " AND (serving_size LIKE ? OR TRY_CAST(serving_size AS INT) >= ?)"
+            params.extend(['%6+%', 6])
 
-    query = f"SELECT * FROM [YemekTarifleri].[dbo].[Recipe] WHERE {where_sql}"
+    query = f"""
+    SELECT r.*, 
+           (SELECT COUNT(*) FROM favorites f WHERE f.recipe_id = r.id) AS favorite_count
+    FROM [YemekTarifleri].[dbo].[Recipe] r
+    WHERE {where_sql}
+    """
     print('[DEBUG] Final SQL query:', query)
     print('[DEBUG] Query parameters:', params)
 
@@ -486,6 +502,12 @@ def suggest_recipes():
                     recipe[k] = str(v)
                 else:
                     recipe[k] = ""
+            # Favori sayısını int olarak ekle
+            if 'favorite_count' in recipe:
+                try:
+                    recipe['favorite_count'] = int(recipe['favorite_count'])
+                except:
+                    recipe['favorite_count'] = 0
             results.append(recipe)
         conn.close()
         print('[DEBUG] Found recipes before time filter:', len(results))

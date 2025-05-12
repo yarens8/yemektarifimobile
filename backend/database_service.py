@@ -81,7 +81,8 @@ class DatabaseService:
                             r.[ingredients_sections],
                             u.[username],
                             COALESCE(r.[average_rating], 0.0) as average_rating,
-                            COALESCE(r.[rating_count], 0) as rating_count
+                            COALESCE(r.[rating_count], 0) as rating_count,
+                            (SELECT COUNT(*) FROM favorites f WHERE f.recipe_id = r.id) AS favorite_count
                         FROM [dbo].[Recipe] r
                         LEFT JOIN [dbo].[User] u ON r.[user_id] = u.[id]
                         WHERE r.[category_id] = ?
@@ -108,7 +109,8 @@ class DatabaseService:
                             r.[ingredients_sections],
                             u.[username],
                             COALESCE(r.[average_rating], 0.0) as average_rating,
-                            COALESCE(r.[rating_count], 0) as rating_count
+                            COALESCE(r.[rating_count], 0) as rating_count,
+                            (SELECT COUNT(*) FROM favorites f WHERE f.recipe_id = r.id) AS favorite_count
                         FROM [dbo].[Recipe] r
                         LEFT JOIN [dbo].[User] u ON r.[user_id] = u.[id]
                         ORDER BY r.[views] DESC
@@ -203,7 +205,8 @@ class DatabaseService:
                         r.[ingredients_sections],
                         r.[username],
                         r.[average_rating],
-                        r.[rating_count]
+                        r.[rating_count],
+                        (SELECT COUNT(*) FROM favorites f WHERE f.recipe_id = r.id) AS favorite_count
                     FROM [dbo].[Recipe] r
                     ORDER BY r.[views] DESC
                 """)
@@ -237,7 +240,8 @@ class DatabaseService:
                         r.[ingredients_sections],
                         r.[username],
                         r.[average_rating],
-                        r.[rating_count]
+                        r.[rating_count],
+                        (SELECT COUNT(*) FROM favorites f WHERE f.recipe_id = r.id) AS favorite_count
                     FROM [dbo].[Recipe] r
                     WHERE r.[category_id] = ?
                     ORDER BY r.[views] DESC
@@ -503,41 +507,40 @@ class DatabaseService:
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT 
-                        r.id, 
-                        r.title, 
-                        r.views, 
-                        r.created_at, 
-                        r.cooking_time,
-                        r.image_filename, 
-                        r.ingredients,
-                        r.instructions,
-                        r.tips,
-                        u.username,
-                        COALESCE(r.average_rating, 0.0) as average_rating,
-                        COALESCE(r.rating_count, 0) as rating_count
+                        r.id AS id, 
+                        r.title AS title, 
+                        r.views AS views, 
+                        r.created_at AS created_at, 
+                        r.cooking_time AS cooking_time,
+                        r.image_filename AS image_filename, 
+                        r.ingredients AS ingredients,
+                        r.instructions AS instructions,
+                        r.tips AS tips,
+                        COALESCE(r.serving_size, 'Bilinmiyor') AS serving_size,
+                        r.category_id AS category_id,
+                        r.user_id AS user_id,
+                        r.preparation_time AS preparation_time,
+                        COALESCE(r.average_rating, 0.0) AS average_rating,
+                        COALESCE(r.rating_count, 0) AS rating_count,
+                        (SELECT COUNT(*) FROM favorites f WHERE f.recipe_id = r.id) AS favorite_count
                     FROM [dbo].[Recipe] r
                     INNER JOIN [dbo].[favorites] f ON r.id = f.recipe_id
                     INNER JOIN [dbo].[User] u ON r.user_id = u.id
                     WHERE f.user_id = ?
                     ORDER BY r.title
                 """, (user_id,))
-                
+                columns = [column[0] for column in cursor.description]
                 recipes = []
                 for row in cursor.fetchall():
-                    recipe = {
-                        'id': row[0],
-                        'title': row[1],
-                        'views': row[2],
-                        'created_at': row[3],
-                        'cooking_time': row[4],
-                        'image_filename': row[5],
-                        'ingredients': row[6],
-                        'instructions': row[7],
-                        'tips': row[8],
-                        'username': row[9],
-                        'average_rating': float(row[10]) if row[10] else 0.0,
-                        'rating_count': row[11] if row[11] else 0
-                    }
+                    recipe = dict(zip(columns, row))
+                    # Tarih alanlarını string'e çevir
+                    if recipe.get('created_at'):
+                        recipe['created_at'] = recipe['created_at'].isoformat()
+                    # Eksik veya null değerleri doldur
+                    if not recipe.get('serving_size'):
+                        recipe['serving_size'] = 'Bilinmiyor'
+                    if not recipe.get('favorite_count'):
+                        recipe['favorite_count'] = 0
                     recipes.append(recipe)
                 return recipes, None
                 
@@ -836,6 +839,47 @@ class DatabaseService:
         except Exception as e:
             self.logger.error(f"Yorum silinirken hata: {str(e)}")
             return False, f"Yorum silinirken hata oluştu: {str(e)}"
+
+    def get_recipe_detail(self, recipe_id):
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT 
+                        r.[id],
+                        r.[title],
+                        r.[description],
+                        r.[ingredients],
+                        r.[instructions],
+                        r.[created_at],
+                        r.[user_id],
+                        r.[category_id],
+                        r.[views],
+                        r.[serving_size],
+                        r.[preparation_time],
+                        r.[cooking_time],
+                        r.[tips],
+                        r.[image_filename],
+                        r.[ingredients_sections],
+                        r.[username],
+                        COALESCE(r.[average_rating], 0.0) as average_rating,
+                        COALESCE(r.[rating_count], 0) as rating_count,
+                        (SELECT COUNT(*) FROM favorites f WHERE f.recipe_id = r.id) AS favorite_count
+                    FROM [dbo].[Recipe] r
+                    WHERE r.id = ?
+                """, (recipe_id,))
+                columns = [column[0] for column in cursor.description]
+                row = cursor.fetchone()
+                if row:
+                    recipe = dict(zip(columns, row))
+                    if recipe.get('created_at'):
+                        recipe['created_at'] = recipe['created_at'].isoformat()
+                    return recipe
+                return None
+        except Exception as e:
+            print(f"[DEBUG] get_recipe_detail hatası: {str(e)}")
+            print(f"[DEBUG] Hata detayı: {traceback.format_exc()}")
+            return None
 
 # Singleton instance
 db_service = DatabaseService() 

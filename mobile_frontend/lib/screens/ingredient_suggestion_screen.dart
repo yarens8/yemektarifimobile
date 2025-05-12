@@ -45,7 +45,11 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
     'Tümü', '30 dakikadan az', '30-60 dakika', '60 dakikadan fazla'
   ];
   final List<String> _porsiyonOptions = [
-    'Tümü', '1-2 Kişilik', '3-4 Kişilik', '5-6 Kişilik', '6+ Kişilik'
+    'Tümü',
+    '1-2 Kişilik',
+    '3-4 Kişilik',
+    '5-6 Kişilik',
+    '6+ Kişilik'
   ];
   String _selectedYemekTuru = 'Tümü';
   String _selectedPisirmeSuresi = 'Tümü';

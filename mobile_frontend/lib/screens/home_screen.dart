@@ -262,25 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => RecipeDetailScreen(
-                recipe: Recipe(
-                  id: recipe['id'] ?? 0,
-                  title: recipe['title'] ?? '',
-                  description: recipe['description'] ?? '',
-                  ingredients: recipe['ingredients'] ?? '',
-                  instructions: recipe['instructions'] ?? '',
-                  imageFilename: recipe['image_filename'] ?? '',
-                  images: [],
-                  servingSize: recipe['serving_size'],
-                  cookingTime: recipe['cooking_time'],
-                  prepTime: recipe['prep_time'],
-                  tips: recipe['tips'],
-                  difficulty: recipe['difficulty'],
-                  userId: recipe['user_id'] ?? 0,
-                  username: recipe['username'] ?? 'Anonim',
-                  categoryId: recipe['category_id'] ?? 0,
-                  createdAt: recipe['created_at'] != null ? DateTime.parse(recipe['created_at']) : DateTime.now(),
-                  updatedAt: recipe['updated_at'] != null ? DateTime.parse(recipe['updated_at']) : DateTime.now(),
-                ),
+                recipe: Recipe.fromJson(recipe),
               ),
             ),
           );
@@ -366,6 +348,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if ((recipe['serving_size'] ?? '').toString().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.groups, size: 14, color: Colors.green[700]),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              recipe['serving_size'],
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const Spacer(),
                     Row(
                       mainAxisSize: MainAxisSize.min,

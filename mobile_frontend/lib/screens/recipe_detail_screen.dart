@@ -499,13 +499,23 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Row(
+                            Column(
                               children: [
-                                Expanded(child: _infoChip(Icons.timer, '${_recipe!.cookingTime ?? ''} dakika', Colors.blue.shade50, Colors.blue)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _infoChip(Icons.favorite, '${_recipe!.favoriteCount} Favori', Colors.pink.shade50, Colors.pink)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _infoChip(Icons.remove_red_eye, '${_recipe!.views} Görüntülenme', Colors.purple.shade50, Colors.purple)),
+                                Row(
+                                  children: [
+                                    Expanded(child: _infoChip(Icons.timer, '${_recipe!.cookingTime ?? ''} dakika', Colors.blue.shade50, Colors.blue)),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: _infoChip(Icons.groups, 'Porsiyon: ${_recipe!.servingSize ?? 'Bilinmiyor'}', Colors.green.shade50, Colors.green)),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(child: _infoChip(Icons.favorite, '${_recipe!.favoriteCount} Favori', Colors.pink.shade50, Colors.pink)),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: _infoChip(Icons.remove_red_eye, '${_recipe!.views} Görüntülenme', Colors.purple.shade50, Colors.purple)),
+                                  ],
+                                ),
                               ],
                             ),
                             const SizedBox(height: 14),
