@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 from database_service import db_service
 from flask_cors import CORS
 import logging
@@ -12,6 +12,7 @@ from flask_jwt_extended.exceptions import NoAuthorizationError
 from flask import make_response
 import pyodbc
 import re
+import requests
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -22,6 +23,7 @@ class CustomJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False  # Türkçe karakter desteği
 app.json_encoder = CustomJSONEncoder  # Özel JSON encoder'ı ayarla
 
 # JWT ayarları
@@ -106,7 +108,7 @@ def login():
             
         # JWT token oluştur
         access_token = create_access_token(identity={'user_id': user['id'], 'username': user['username']})
-
+            
         return jsonify({
             'message': 'Giriş başarılı',
             'user': user,
@@ -534,6 +536,35 @@ def suggest_recipes():
     except Exception as e:
         print('[DEBUG] Database error:', str(e))
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ai-chat', methods=['POST'])
+def ai_chat():
+    try:
+        user_message = request.json.get('message')
+        GEMINI_API_KEY = "AIzaSyCMpwLk4VkG__bu5vBMpSS7d327PzNED4Q"
+        GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY
+        data = {
+            "contents": [
+                {"parts": [{"text": user_message}]}
+            ]
+        }
+        response = requests.post(GEMINI_URL, json=data)
+        response_json = response.json()
+        if "candidates" not in response_json:
+            return Response(
+                json.dumps({"error": response_json}, ensure_ascii=False),
+                content_type="application/json; charset=utf-8"
+            )
+        gemini_reply = response_json['candidates'][0]['content']['parts'][0]['text']
+        return Response(
+            json.dumps({"reply": gemini_reply}, ensure_ascii=False),
+            content_type="application/json; charset=utf-8"
+        )
+    except Exception as e:
+        return Response(
+            json.dumps({"error": str(e)}, ensure_ascii=False),
+            content_type="application/json; charset=utf-8"
+        )
 
 @app.errorhandler(NoAuthorizationError)
 def handle_auth_error(e):
