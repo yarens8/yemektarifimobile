@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'dart:ui';
 import '../services/auth_service.dart';
 import '../screens/recipe_detail_screen.dart';
+import 'ai_recipe_screen.dart';
 
 class IngredientSuggestionScreen extends StatefulWidget {
   @override
@@ -575,7 +576,10 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                             style: TextStyle(color: Colors.pink.shade400, fontSize: 17, fontWeight: FontWeight.w600),
                           ),
                       )
-                    : ListView.builder(
+                      : Column(
+                          children: [
+                            Expanded(
+                              child: ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         itemCount: _suggestedRecipes.length,
                         itemBuilder: (context, index) {
@@ -593,6 +597,41 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
                             },
                           );
                         },
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 170,
+                                  height: 40,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => AiRecipeScreen(),
+                                        ),
+                                      );
+                                    },
+                                    icon: Icon(Icons.smart_toy, size: 18),
+                                    label: Text(
+                                      'Farklı Tarifler Al',
+                                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.pinkAccent,
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      elevation: 2,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                       ),
           ),
         ],

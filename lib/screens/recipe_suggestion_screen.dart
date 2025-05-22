@@ -161,6 +161,25 @@ class _RecipeSuggestionScreenState extends State<RecipeSuggestionScreen> {
                         );
                       },
                     ),
+      bottomNavigationBar: (_isLoading || _error != null || _suggestions.isEmpty)
+          ? null
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  // AI sayfasına yönlendirme veya fonksiyon
+                  print('Farklı Tarifler Al butonuna basıldı');
+                },
+                icon: Icon(Icons.smart_toy),
+                label: Text('Farklı Tarifler Al'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.pinkAccent,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
     );
   }
 } 

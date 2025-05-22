@@ -13,6 +13,7 @@ from flask import make_response
 import pyodbc
 import re
 import requests
+import os
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -537,11 +538,76 @@ def suggest_recipes():
         print('[DEBUG] Database error:', str(e))
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/ai_recipe', methods=['POST'])
+def ai_recipe():
+    try:
+        data = request.get_json(force=True)
+        ingredients = data.get('ingredients', [])
+        if not ingredients or not isinstance(ingredients, list):
+            return jsonify({'error': 'ingredients alanı zorunlu ve liste olmalı'}), 400
+
+        # Gemini API anahtarını ortam değişkeninden al
+        GEMINI_API_KEY = "AIzaSyBYITo8SvLOJdrAd5ITVwitLb9-43_gwN8"
+        GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+
+        # Promptu hazırla
+        prompt = f"""
+Elimde şu malzemeler var: {', '.join(ingredients)}.
+Bu malzemelerle yapılabilecek 5 farklı yemek tarifi öner.
+Her tarifi aşağıdaki formatta bir Python sözlüğü (dict) olarak oluştur:
+{{
+  "Başlık": "...",
+  "Malzemeler": "...",
+  "Hazırlanış": "...",
+  "Hazırlama Süresi": ...,
+  "Pişirme Süresi": ...,
+  "Porsiyon": ...
+}}
+Tüm tarifleri bir listeye koy ve SADECE geçerli bir JSON olarak döndür. Açıklama, başlık veya başka hiçbir şey ekleme.
+"""
+        gemini_data = {
+            "contents": [
+                {"parts": [{"text": prompt}]}
+            ]
+        }
+        response = requests.post(GEMINI_URL, json=gemini_data)
+        response_json = response.json()
+        # Yanıtı işle
+        if "candidates" not in response_json:
+            return jsonify({'error': response_json}), 500
+        gemini_text = response_json['candidates'][0]['content']['parts'][0]['text']
+        # Yanıtı JSON'a parse et
+        import json
+        try:
+            # Sadece ilk ve son köşeli parantez arasını al
+            start = gemini_text.find('[')
+            end = gemini_text.rfind(']')
+            if start != -1 and end != -1:
+                json_str = gemini_text[start:end+1]
+            else:
+                json_str = gemini_text
+            recipes = json.loads(json_str)
+            # Gemini yanıtını terminale yazdır
+            print('Gemini yanıtı:', json_str)
+            # Eksik alanları tamamla
+            for r in recipes:
+                r.setdefault('Başlık', '')
+                r.setdefault('Malzemeler', '')
+                r.setdefault('Hazırlanış', '')
+                r.setdefault('Hazırlama Süresi', 0)
+                r.setdefault('Pişirme Süresi', 0)
+                r.setdefault('Porsiyon', 0)
+        except Exception as e:
+            return jsonify({'error': 'Gemini yanıtı JSON olarak parse edilemedi', 'raw': gemini_text}), 500
+        return Response(json.dumps(recipes, ensure_ascii=False), content_type="application/json; charset=utf-8")
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/ai-chat', methods=['POST'])
 def ai_chat():
     try:
         user_message = request.json.get('message')
-        GEMINI_API_KEY = "AIzaSyCMpwLk4VkG__bu5vBMpSS7d327PzNED4Q"
+        GEMINI_API_KEY = "AIzaSyBYITo8SvLOJdrAd5ITVwitLb9-43_gwN8"
         GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY
         data = {
             "contents": [

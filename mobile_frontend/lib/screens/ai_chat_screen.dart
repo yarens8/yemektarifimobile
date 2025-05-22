@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:math' as math;
+import '../widgets/chat_bubble.dart';
 
 class Message {
   final String text;
@@ -171,7 +172,10 @@ class _AIChatScreenState extends State<AIChatScreen> {
                     controller: _scrollController,
                     itemCount: messages.length,
                     separatorBuilder: (context, index) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) => ChatBubble(message: messages[index]),
+                    itemBuilder: (context, index) => ChatBubble(
+                      text: messages[index].text,
+                      isMe: messages[index].sender == 'user',
+                    ),
                   ),
                 ),
                 if (isLoading)
@@ -291,169 +295,6 @@ class _AIChatScreenState extends State<AIChatScreen> {
   }
 }
 
-class ChatBubble extends StatelessWidget {
-  final Message message;
-  const ChatBubble({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final isUser = message.sender == 'user';
-    final bgColor = isUser ? const Color(0xFFF06292) : Colors.white;
-    final textColor = isUser ? Colors.white : const Color(0xFFE91E63);
-    final align = isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-    final radius = BorderRadius.only(
-      topLeft: const Radius.circular(22),
-      topRight: const Radius.circular(22),
-      bottomLeft: Radius.circular(isUser ? 22 : 6),
-      bottomRight: Radius.circular(isUser ? 6 : 22),
-    );
-    return Padding(
-      padding: EdgeInsets.only(
-        left: isUser ? 40 : 12,
-        right: isUser ? 12 : 40,
-        top: 2,
-        bottom: 2,
-      ),
-      child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!isUser)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFE040FB), Color(0xFFF06292)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.pink.withOpacity(0.18),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.smart_toy, color: Colors.white, size: 22),
-              ),
-            ),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: align,
-              children: [
-                Stack(
-                  children: [
-                    Container(
-                      margin: EdgeInsets.only(
-                        left: !isUser ? 8 : 0,
-                        right: isUser ? 8 : 0,
-                        bottom: 6,
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: bgColor,
-                        borderRadius: radius,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12.withOpacity(0.10),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        message.text,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: textColor,
-                          fontWeight: FontWeight.w500,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                    // Kuyruk
-                    Positioned(
-                      bottom: 0,
-                      left: isUser ? null : 18,
-                      right: isUser ? 18 : null,
-                      child: CustomPaint(
-                        painter: SoftTailPainter(
-                          color: bgColor,
-                          isUser: isUser,
-                        ),
-                        size: const Size(18, 12),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          if (isUser)
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFF06292), Color(0xFFE040FB)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.pink.withOpacity(0.12),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.person, color: Colors.white, size: 18),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class SoftTailPainter extends CustomPainter {
-  final Color color;
-  final bool isUser;
-  SoftTailPainter({required this.color, required this.isUser});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    final path = Path();
-    if (isUser) {
-      path.moveTo(size.width, 0);
-      path.quadraticBezierTo(size.width * 0.7, size.height * 0.7, size.width * 0.2, size.height);
-      path.lineTo(size.width * 0.2, size.height - 4);
-      path.quadraticBezierTo(size.width * 0.7, size.height * 0.5, size.width, 0);
-    } else {
-      path.moveTo(0, 0);
-      path.quadraticBezierTo(size.width * 0.3, size.height * 0.7, size.width * 0.8, size.height);
-      path.lineTo(size.width * 0.8, size.height - 4);
-      path.quadraticBezierTo(size.width * 0.3, size.height * 0.5, 0, 0);
-    }
-    path.close();
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 class WelcomeRobotPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -516,14 +357,17 @@ class WelcomeRobotPainter extends CustomPainter {
       bodyPaint,
     );
 
-    // Sol kol (gövdeden ayrı, yukarıya doğru kavisli ve ince, ucu yuvarlatılmış)
+    // Sol kol (kafa ile gövdenin birleştiği noktadan başlar, yukarı dikey ve hafif sola kavisli)
     final armPaint = Paint()
       ..shader = gradient.createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..style = PaintingStyle.fill;
-    final armWidth = size.width * 0.10;
-    final armStart = Offset(size.width * 0.40, size.height * 0.60);
-    final armEnd = Offset(size.width * 0.20, size.height * 0.05);
-    final control = Offset(size.width * 0.24, size.height * 0.15);
+    final armWidth = size.width * 0.11;
+    // Başlangıç: kafa ile gövdenin birleştiği sol üst nokta
+    final armStart = Offset(size.width * 0.32, size.height * 0.32 + size.width * 0.23); // kafa sol üst
+    // Bitiş: yukarı ve hafif sola
+    final armEnd = Offset(size.width * 0.13, size.height * 0.13);
+    // Kavis kontrol: doğal, hafif sola eğimli
+    final control = Offset(size.width * 0.18, size.height * 0.18);
 
     final armPath = Path();
     armPath.moveTo(armStart.dx, armStart.dy);

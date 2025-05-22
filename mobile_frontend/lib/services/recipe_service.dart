@@ -227,7 +227,7 @@ class RecipeService {
           ).timeout(Duration(seconds: ApiConfig.timeoutSeconds));
 
           print('Response status code: ${response.statusCode}');
-          final responseBody = response.body;
+          final responseBody = utf8.decode(response.bodyBytes);
           print('Response body: $responseBody');
           
           if (response.statusCode == 200) {
@@ -585,7 +585,7 @@ class RecipeService {
       print('[DEBUG] Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
         return data.map((recipeData) => Recipe.fromJson(Map<String, dynamic>.from(recipeData))).toList();
       }
       throw Exception('Tarif önerileri alınamadı: ${response.statusCode}');

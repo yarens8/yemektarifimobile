@@ -111,11 +111,23 @@ class _MainScreenState extends State<MainScreen> {
   Widget _buildFab() {
     return FloatingActionButton(
       heroTag: 'aiChatFab',
-      backgroundColor: Colors.deepPurple,
+      backgroundColor: Colors.transparent,
       onPressed: _openChat,
-      child: const Icon(Icons.smart_toy, size: 32, color: Colors.white),
-      shape: const CircleBorder(),
       elevation: 6,
+      shape: const CircleBorder(),
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: [Color(0xFFFF80AB), Color(0xFFFFB6D5)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: const Icon(Icons.smart_toy, size: 32, color: Colors.white),
+      ),
     );
   }
 }
