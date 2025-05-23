@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/recipe.dart';
 import '../widgets/recipe_card.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 
 class ChatMessage {
   final String? text; // Kullanıcı mesajı
@@ -165,6 +167,45 @@ class _RecipeChatCard extends StatelessWidget {
   final Recipe recipe;
   const _RecipeChatCard({required this.recipe});
 
+  Future<void> _addToToTryRecipes(BuildContext context) async {
+    final userId = Provider.of<UserProvider>(context, listen: false).userId;
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen giriş yapın!')),
+      );
+      return;
+    }
+    try {
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:5000/to-try-recipes/add'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': userId,
+          'ai_title': recipe.title,
+          'ai_ingredients': recipe.ingredients,
+          'ai_instructions': recipe.instructions,
+          'ai_serving_size': recipe.servingSize,
+          'ai_cooking_time': recipe.cookingTime,
+          'ai_preparation_time': recipe.prepTime,
+        }),
+      );
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('"${recipe.title}" denenecekler listesine eklendi!')),
+        );
+      } else {
+        final error = jsonDecode(response.body)['error'] ?? 'Bir hata oluştu';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata: $error')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Bir hata oluştu: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -211,11 +252,7 @@ class _RecipeChatCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('"${recipe.title}" denenecekler listesine eklendi!')),
-                  );
-                },
+                onPressed: () => _addToToTryRecipes(context),
                 child: Text('Bu tarifi deneyeceğim'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.pinkAccent,
