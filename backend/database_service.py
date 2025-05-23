@@ -569,8 +569,7 @@ class DatabaseService:
 
     def create_recipe(self, title, user_id, category_id, ingredients, instructions, servings=None, prep_time=None, cook_time=None, tips=None, image_url=None):
         try:
-            # SQL sorgusu
-            query = """
+            insert_query = """
                 INSERT INTO [dbo].[Recipe] (
                     title, 
                     user_id, 
@@ -585,28 +584,25 @@ class DatabaseService:
                     created_at
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
-                SELECT SCOPE_IDENTITY() as id;
             """
-            
-            # Sorguyu çalıştır
             with self.get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute(query, (
+                cursor.execute(insert_query, (
                     title,
                     user_id,
                     category_id,
                     ingredients,
                     instructions,
-                    servings,  # serving_size alanına
-                    prep_time,  # preparation_time alanına
-                    cook_time,  # cooking_time alanına
+                    servings,
+                    prep_time,
+                    cook_time,
                     tips,
-                    image_url,  # image_filename alanına
+                    image_url,
                 ))
-                
-                # Yeni eklenen tarifin ID'sini al
+                # Şimdi id'yi al
+                cursor.execute("SELECT SCOPE_IDENTITY() as id;")
                 recipe_id = cursor.fetchone()[0]
-                
+
                 # Yeni eklenen tarifi getir
                 cursor.execute("""
                     SELECT 
@@ -625,11 +621,9 @@ class DatabaseService:
                     FROM [dbo].[Recipe] 
                     WHERE id = ?
                 """, (recipe_id,))
-                
                 recipe = cursor.fetchone()
                 conn.commit()
-                
-                # Tarif bilgilerini sözlük olarak döndür
+
                 if recipe:
                     return {
                         'id': recipe[0],
@@ -645,9 +639,7 @@ class DatabaseService:
                         'image_url': recipe[10],
                         'created_at': recipe[11].isoformat() if recipe[11] else None
                     }
-                    
                 return None
-                
         except Exception as e:
             print(f"Error creating recipe: {str(e)}")
             if 'conn' in locals():
@@ -906,6 +898,51 @@ class DatabaseService:
         except Exception as e:
             print(f"Error in get_to_try_recipes: {str(e)}")
             return []
+
+    def remove_from_to_try(self, user_id, recipe_id):
+        """Kullanıcının denenecekler listesinden bir tarifi siler"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    DELETE FROM [dbo].[UserRecipeList]
+                    WHERE user_id = ? AND id = ?
+                """, (int(user_id), int(recipe_id)))
+                conn.commit()
+                if cursor.rowcount > 0:
+                    return True, "Tarif denenecekler listesinden silindi."
+                else:
+                    return False, "Kayıt bulunamadı."
+        except Exception as e:
+            print(f"Error in remove_from_to_try: {str(e)}")
+            return False, f"Hata oluştu: {str(e)}"
+
+    def add_to_try(self, user_id, ai_title, ai_ingredients, ai_instructions, ai_serving_size=None, ai_cooking_time=None, ai_preparation_time=None):
+        """Kullanıcının denenecekler listesine yeni bir AI tarifi ekler"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO [dbo].[UserRecipeList] (
+                        user_id, ai_title, ai_ingredients, ai_instructions, ai_serving_size, ai_cooking_time, ai_preparation_time, status, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', GETDATE())
+                """, (
+                    int(user_id),
+                    ai_title,
+                    ai_ingredients,
+                    ai_instructions,
+                    ai_serving_size,
+                    ai_cooking_time,
+                    ai_preparation_time
+                ))
+                conn.commit()
+                if cursor.rowcount > 0:
+                    return True, "Tarif denenecekler listesine eklendi."
+                else:
+                    return False, "Ekleme başarısız."
+        except Exception as e:
+            print(f"Error in add_to_try: {str(e)}")
+            return False, f"Hata oluştu: {str(e)}"
 
 # Singleton instance
 db_service = DatabaseService() 

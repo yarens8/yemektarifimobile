@@ -697,6 +697,43 @@ def to_try_recipes():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/to-try-recipes/remove', methods=['POST'])
+def remove_from_to_try():
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        recipe_id = data.get('recipe_id')
+        if not user_id or not recipe_id:
+            return jsonify({'error': 'user_id ve recipe_id gereklidir'}), 400
+        success, message = db_service.remove_from_to_try(user_id, recipe_id)
+        if success:
+            return jsonify({'message': message}), 200
+        else:
+            return jsonify({'error': message}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/to-try-recipes/add', methods=['POST'])
+def add_to_try():
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        ai_title = data.get('ai_title')
+        ai_ingredients = data.get('ai_ingredients')
+        ai_instructions = data.get('ai_instructions')
+        ai_serving_size = data.get('ai_serving_size')
+        ai_cooking_time = data.get('ai_cooking_time')
+        ai_preparation_time = data.get('ai_preparation_time')
+        if not user_id or not ai_title or not ai_ingredients or not ai_instructions:
+            return jsonify({'error': 'user_id, ai_title, ai_ingredients, ai_instructions gereklidir'}), 400
+        success, message = db_service.add_to_try(user_id, ai_title, ai_ingredients, ai_instructions, ai_serving_size, ai_cooking_time, ai_preparation_time)
+        if success:
+            return jsonify({'message': message}), 200
+        else:
+            return jsonify({'error': message}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     try:
         logger.info("Starting the server...")

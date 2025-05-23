@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../services/api_service.dart';
+import '../services/recipe_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ToTryRecipesScreen extends StatefulWidget {
   const ToTryRecipesScreen({Key? key}) : super(key: key);
@@ -12,6 +15,7 @@ class ToTryRecipesScreen extends StatefulWidget {
 
 class _ToTryRecipesScreenState extends State<ToTryRecipesScreen> {
   final ApiService _apiService = ApiService();
+  final RecipeService _recipeService = RecipeService();
   bool _isLoading = true;
   List<dynamic> _recipes = [];
 
@@ -52,21 +56,51 @@ class _ToTryRecipesScreenState extends State<ToTryRecipesScreen> {
     }
   }
 
-  Future<void> _markAsTried(int recipeId) async {
-    try {
-      await _apiService.markRecipeAsTried(recipeId);
-      await _loadRecipes(); // Listeyi yenile
-      if (mounted) {
+  Future<void> _addToAiRecipes(int recipeIndex) async {
+    final userId = Provider.of<UserProvider>(context, listen: false).userId;
+    if (userId == null) return;
+    final recipe = _recipes[recipeIndex];
+    final result = await _recipeService.createRecipe(
+      title: recipe['title'] ?? '',
+      userId: userId,
+      categoryId: 9, // AI tariflerim kategorisi (doğru id)
+      ingredients: recipe['ingredients'] ?? '',
+      instructions: recipe['instructions'] ?? '',
+    );
+    if (result['success'] == true && mounted) {
+      try {
+        await _removeFromToTryBackend(recipe['id']);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tarif başarıyla "Denedim ve Beğendim" olarak işaretlendi!')),
+          const SnackBar(content: Text('Tarif yapay zeka tariflerime eklendi ve deneneceklerden silindi!')),
+        );
+        setState(() {
+          _recipes.removeAt(recipeIndex);
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('AI tariflerime eklendi ama deneneceklerden silinemedi: \\${e.toString()}')),
         );
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Bir hata oluştu: $e')),
-        );
-      }
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Bir hata oluştu: \\${result['message']}')),
+      );
+    }
+  }
+
+  Future<void> _removeFromToTryBackend(int recipeId) async {
+    final userId = Provider.of<UserProvider>(context, listen: false).userId;
+    if (userId == null) return;
+    final response = await http.post(
+      Uri.parse('http://10.0.2.2:5000/to-try-recipes/remove'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'user_id': userId, 'recipe_id': recipeId}),
+    );
+    if (response.statusCode == 200) {
+      // Başarılı
+      return;
+    } else {
+      throw Exception(jsonDecode(response.body)['error'] ?? 'Silme işlemi başarısız');
     }
   }
 
@@ -105,13 +139,32 @@ class _ToTryRecipesScreenState extends State<ToTryRecipesScreen> {
                               style: const TextStyle(fontSize: 14),
                             ),
                             const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () => _markAsTried(recipe['id']),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                foregroundColor: Colors.white,
-                              ),
-                              child: const Text('Denedim ve Beğendim'),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      await _addToAiRecipes(index);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text('Denedim ve Beğendim'),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () => _removeFromToTryBackend(recipe['id']),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text('Sil'),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
