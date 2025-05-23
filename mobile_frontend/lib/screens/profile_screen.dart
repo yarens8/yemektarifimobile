@@ -7,6 +7,7 @@ import 'my_recipes_screen.dart';
 import 'favorite_recipes_screen.dart';
 import 'user_recipes_screen.dart';
 import 'add_recipe_screen.dart';
+import 'to_try_recipes_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -163,10 +164,21 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
               _buildProfileMenuItem(
-                icon: Icons.history,
-                title: 'Son Görüntülenenler',
+                icon: Icons.bookmark,
+                title: 'Denenecek Tariflerim',
                 onTap: () {
-                  // TODO: Son görüntülenenlere yönlendir
+                  if (user != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ToTryRecipesScreen(),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Lütfen önce giriş yapın')),
+                    );
+                  }
                 },
               ),
               _buildProfileMenuItem(
@@ -183,20 +195,6 @@ class ProfileScreen extends StatelessWidget {
                       const SnackBar(content: Text('Tarif eklemek için lütfen giriş yapın')),
                     );
                   }
-                },
-              ),
-              _buildProfileMenuItem(
-                icon: Icons.notifications,
-                title: 'Bildirimler',
-                onTap: () {
-                  // TODO: Bildirimlere yönlendir
-                },
-              ),
-              _buildProfileMenuItem(
-                icon: Icons.help,
-                title: 'Yardım',
-                onTap: () {
-                  // TODO: Yardım sayfasına yönlendir
                 },
               ),
             ],

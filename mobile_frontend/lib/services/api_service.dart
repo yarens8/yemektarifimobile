@@ -160,4 +160,32 @@ class ApiService {
       return [];
     }
   }
+
+  // Denenecek tarifleri getir
+  Future<List<dynamic>> getToTryRecipes(int userId) async {
+    try {
+      final response = await _dio.get('/to-try-recipes', queryParameters: {'user_id': userId});
+      if (response.statusCode == 200 && response.data is List) {
+        return response.data;
+      }
+      if (response.data is Map && response.data['recipes'] is List) {
+        return response.data['recipes'];
+      }
+      throw Exception('Tarifler yüklenirken bir hata oluştu');
+    } catch (e) {
+      throw Exception('Tarifler yüklenirken bir hata oluştu: $e');
+    }
+  }
+
+  // Tarifi denendi olarak işaretle
+  Future<void> markRecipeAsTried(int recipeId) async {
+    try {
+      final response = await _dio.post('/mark_tried_recipe', data: {'id': recipeId});
+      if (response.statusCode != 200) {
+        throw Exception('Tarif işaretlenirken bir hata oluştu');
+      }
+    } catch (e) {
+      throw Exception('Tarif işaretlenirken bir hata oluştu: $e');
+    }
+  }
 }

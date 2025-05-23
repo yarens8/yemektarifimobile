@@ -8,6 +8,8 @@ class UserProvider extends ChangeNotifier {
 
   User? get currentUser => _currentUser;
 
+  int? get userId => _currentUser?.id;
+
   // Kullanıcı bilgilerini güncelle
   void setUser(User user) {
     _currentUser = user;

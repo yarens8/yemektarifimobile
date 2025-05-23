@@ -881,5 +881,31 @@ class DatabaseService:
             print(f"[DEBUG] Hata detayı: {traceback.format_exc()}")
             return None
 
+    def get_to_try_recipes(self, user_id):
+        """Kullanıcının denenecek tariflerini getirir"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT
+                        id,
+                        ai_title AS title,
+                        ai_ingredients AS ingredients,
+                        ai_instructions AS instructions,
+                        ai_serving_size AS serving_size,
+                        ai_cooking_time AS cooking_time,
+                        ai_preparation_time AS preparation_time,
+                        created_at
+                    FROM [dbo].[UserRecipeList]
+                    WHERE user_id = ? AND status = 'pending'
+                    ORDER BY created_at DESC
+                """, (int(user_id),))
+                columns = [column[0] for column in cursor.description]
+                recipes = [dict(zip(columns, row)) for row in cursor.fetchall()]
+                return recipes
+        except Exception as e:
+            print(f"Error in get_to_try_recipes: {str(e)}")
+            return []
+
 # Singleton instance
 db_service = DatabaseService() 

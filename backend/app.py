@@ -686,6 +686,17 @@ def parse_ai_recipes(reply):
     except Exception as e:
         return str(e), []
 
+@app.route('/to-try-recipes', methods=['GET'])
+def to_try_recipes():
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'Kullanıcı ID gerekli'}), 400
+    try:
+        recipes = db_service.get_to_try_recipes(user_id)
+        return jsonify({'recipes': recipes}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     try:
         logger.info("Starting the server...")
