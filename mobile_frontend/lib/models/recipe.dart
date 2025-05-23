@@ -65,52 +65,21 @@ class Recipe {
   });
 
   factory Recipe.fromJson(Map<String, dynamic> json) {
-    // Gemini API'dan gelen yanıt için özel kontrol
-    if (json.containsKey('Başlık')) {
-      return Recipe(
-        id: 0, // AI tarifleri için ID yok
-        title: (json['Başlık'] ?? '').toString(),
-        description: '', // AI tarifleri için description yok
-        ingredients: (json['Malzemeler'] ?? '').toString(),
-        instructions: (json['Hazırlanış'] ?? '').toString(),
-        imageUrl: null,
-        images: [],
-        servingSize: (json['Porsiyon'] ?? '').toString(),
-        cookingTime: (json['Pişirme Süresi'] ?? '').toString(),
-        prepTime: (json['Hazırlama Süresi'] ?? '').toString(),
-        tips: null,
-        difficulty: null,
-        userId: 0,
-        username: 'AI Tarif',
-        categoryId: 0,
-        isFavorited: false,
-        favoriteCount: 0,
-        commentCount: 0,
-        views: 0,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        averageRating: 0.0,
-        ratingCount: 0,
-        userRating: null,
-        matchingIngredients: null,
-        requiredIngredients: null,
-        matchCount: null,
-        imageFilename: '',
-      );
-    }
-    
-    // Normal veritabanı tarifleri için mevcut kod
     return Recipe(
       id: int.tryParse(json['id'].toString()) ?? 0,
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      ingredients: json['ingredients'] ?? '',
-      instructions: json['instructions'] ?? '',
+      ingredients: (json['ingredients'] is List)
+          ? (json['ingredients'] as List).join(', ')
+          : (json['ingredients'] ?? ''),
+      instructions: (json['instructions'] is List)
+          ? (json['instructions'] as List).join('\n')
+          : (json['instructions'] ?? ''),
       imageUrl: json['image_url'],
       images: (json['images'] as List<dynamic>?)?.map((image) => RecipeImage.fromJson(image)).toList() ?? [],
-      servingSize: json['serving_size'],
-      cookingTime: json['cooking_time'],
-      prepTime: json['prep_time'],
+      servingSize: json['serving_size']?.toString(),
+      cookingTime: json['cooking_time']?.toString(),
+      prepTime: json['prep_time']?.toString(),
       tips: json['tips'],
       difficulty: json['difficulty'],
       userId: int.tryParse(json['user_id'].toString()) ?? 0,

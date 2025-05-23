@@ -1,37 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../models/recipe.dart';
+import '../widgets/recipe_card.dart';
+
+class ChatMessage {
+  final String? text; // Kullanıcı mesajı
+  final List<Recipe>? recipes; // AI cevabı (tarif listesi)
+  final bool isUser;
+  ChatMessage.user(this.text) : recipes = null, isUser = true;
+  ChatMessage.ai(this.recipes) : text = null, isUser = false;
+}
 
 class AiRecipeScreen extends StatefulWidget {
-  const AiRecipeScreen({Key? key}) : super(key: key);
-
   @override
-  State<AiRecipeScreen> createState() => _AiRecipeScreenState();
+  _AiRecipeScreenState createState() => _AiRecipeScreenState();
 }
 
 class _AiRecipeScreenState extends State<AiRecipeScreen> {
-  final TextEditingController _ingredientController = TextEditingController();
-  final List<String> _ingredients = [];
+  final TextEditingController _messageController = TextEditingController();
+  final List<ChatMessage> _messages = [];
   bool _isLoading = false;
-  List<Map<String, dynamic>> _aiRecipes = [];
 
-  void _addIngredient() {
-    final value = _ingredientController.text.trim();
-    if (value.isNotEmpty && !_ingredients.contains(value)) {
-      setState(() {
-        _ingredients.add(value);
-        _ingredientController.clear();
-      });
-    }
-  }
-
-  Future<void> _fetchAiRecipes() async {
-    if (_ingredients.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lütfen en az bir malzeme girin!')),
-      );
-      return;
-    }
+  Future<void> _fetchAiRecipes(String userMessage) async {
     setState(() {
       _isLoading = true;
     });
@@ -39,42 +30,46 @@ class _AiRecipeScreenState extends State<AiRecipeScreen> {
       final response = await http.post(
         Uri.parse('http://10.0.2.2:5000/api/ai_recipe'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'ingredients': _ingredients}),
+        body: jsonEncode({'user_message': userMessage}),
       );
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data is List) {
-          setState(() {
-            _aiRecipes = data.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
-            _isLoading = false;
-          });
-        } else {
-          setState(() {
-            _aiRecipes = [];
-            _isLoading = false;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('AI yanıtı beklenen formatta değil.')),
-          );
-        }
+        final List<dynamic> data = jsonDecode(response.body);
+        final recipes = data.map((e) => Recipe.fromJson(e)).toList();
+        setState(() {
+          _messages.add(ChatMessage.ai(recipes));
+          _isLoading = false;
+        });
       } else {
         setState(() {
-          _aiRecipes = [];
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('AI tarifleri alınamadı: ${response.body}')),
+          SnackBar(content: Text('AI tarifleri alınamadı: \\${response.body}')),
         );
       }
     } catch (e) {
       setState(() {
-        _aiRecipes = [];
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Bir hata oluştu: $e')),
+        SnackBar(content: Text('Bir hata oluştu: \\${e}')),
       );
     }
+  }
+
+  void _sendMessage() {
+    final userMessage = _messageController.text.trim();
+    if (userMessage.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lütfen bir mesaj girin!')),
+      );
+      return;
+    }
+    setState(() {
+      _messages.add(ChatMessage.user(userMessage));
+      _messageController.clear();
+    });
+    _fetchAiRecipes(userMessage);
   }
 
   @override
@@ -83,159 +78,152 @@ class _AiRecipeScreenState extends State<AiRecipeScreen> {
       appBar: AppBar(
         title: Text('AI Tarif Önerileri'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Elinizdeki Malzemeler:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
-            Row(
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final msg = _messages[index];
+                if (msg.isUser) {
+                  // Kullanıcı mesajı balonu
+                  return Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.pinkAccent.shade100,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(msg.text ?? '', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    ),
+                  );
+                } else {
+                  // AI cevabı: tarif kartları
+                  final recipes = msg.recipes ?? [];
+                  if (recipes.isEmpty) {
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text("AI'dan tarif bulunamadı.", style: TextStyle(color: Colors.black87)),
+                      ),
+                    );
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: recipes.map((recipe) => _RecipeChatCard(recipe: recipe)).toList(),
+                  );
+                }
+              },
+            ),
+          ),
+          if (_isLoading)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: CircularProgressIndicator(color: Colors.pinkAccent),
+            ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            color: Colors.white,
+            child: Row(
               children: [
                 Expanded(
                   child: TextField(
-                    controller: _ingredientController,
+                    controller: _messageController,
+                    minLines: 1,
+                    maxLines: 3,
                     decoration: InputDecoration(
-                      hintText: 'Malzeme ekle...',
+                      hintText: 'Mesajınızı veya malzemeleri yazın...',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     ),
-                    onSubmitted: (_) => _addIngredient(),
                   ),
                 ),
                 const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _addIngredient,
-                  child: Icon(Icons.add),
-                  style: ElevatedButton.styleFrom(
-                    shape: CircleBorder(),
-                    padding: EdgeInsets.all(12),
-                    backgroundColor: Colors.pinkAccent,
-                    foregroundColor: Colors.white,
-                  ),
+                IconButton(
+                  icon: Icon(Icons.send, color: Colors.pinkAccent),
+                  onPressed: _isLoading ? null : _sendMessage,
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecipeChatCard extends StatelessWidget {
+  final Recipe recipe;
+  const _RecipeChatCard({required this.recipe});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(recipe.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+            const SizedBox(height: 6),
+            if (recipe.ingredients.isNotEmpty)
+              Text('Malzemeler: ${recipe.ingredients}', style: TextStyle(fontSize: 14, color: Colors.black87)),
+            if (recipe.instructions.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text('Hazırlanışı: ${recipe.instructions}', style: TextStyle(fontSize: 14, color: Colors.black87)),
+              ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: _ingredients.map((e) => Chip(
-                label: Text(e),
-                onDeleted: () {
-                  setState(() {
-                    _ingredients.remove(e);
-                  });
-                },
-              )).toList(),
+            Row(
+              children: [
+                if (recipe.servingSize != null && recipe.servingSize!.isNotEmpty)
+                  Row(
+                    children: [
+                      Icon(Icons.people, size: 16, color: Colors.grey),
+                      const SizedBox(width: 3),
+                      Text(recipe.servingSize!, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+                      const SizedBox(width: 12),
+                    ],
+                  ),
+                if (recipe.cookingTime != null && recipe.cookingTime!.isNotEmpty)
+                  Row(
+                    children: [
+                      Icon(Icons.timer, size: 16, color: Colors.grey),
+                      const SizedBox(width: 3),
+                      Text('${recipe.cookingTime!} dk', style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+                    ],
+                  ),
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
-              height: 44,
               child: ElevatedButton(
-                onPressed: _isLoading ? null : _fetchAiRecipes,
-                child: _isLoading
-                    ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : Text('Tarifleri Getir', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('"${recipe.title}" denenecekler listesine eklendi!')),
+                  );
+                },
+                child: Text('Bu tarifi deneyeceğim'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.pinkAccent,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: _aiRecipes.isEmpty
-                  ? Center(child: Text('Henüz AI tarifi yok'))
-                  : ListView.builder(
-                      itemCount: _aiRecipes.length,
-                      itemBuilder: (context, index) {
-                        final recipe = _aiRecipes[index];
-                        return Container(
-                          margin: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.pink.shade100.withOpacity(0.18),
-                                blurRadius: 16,
-                                offset: Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(18.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Başlık
-                                Text(
-                                  recipe['title'],
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19, color: Colors.pink.shade400),
-                                ),
-                                const SizedBox(height: 8),
-                                // Malzemeler badge gibi
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 4,
-                                  children: List.generate(
-                                    (recipe['ingredients'] as List).length,
-                                    (i) => Chip(
-                                      label: Text(recipe['ingredients'][i], style: TextStyle(fontSize: 13, color: Colors.pink.shade700)),
-                                      backgroundColor: Colors.pink.shade50,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                // Açıklama
-                                Text(
-                                  recipe['instructions'],
-                                  style: TextStyle(fontSize: 15, color: Colors.grey.shade800),
-                                ),
-                                const SizedBox(height: 14),
-                                // Bilgiler: Hazırlama, Pişirme, Porsiyon
-                                Row(
-                                  children: [
-                                    Icon(Icons.timer, size: 18, color: Colors.pink.shade300),
-                                    const SizedBox(width: 4),
-                                    Text('Hazırlık: ${recipe['prep_time']} dk', style: TextStyle(fontSize: 13)),
-                                    const SizedBox(width: 16),
-                                    Icon(Icons.local_fire_department, size: 18, color: Colors.orange.shade300),
-                                    const SizedBox(width: 4),
-                                    Text('Pişirme: ${recipe['cook_time']} dk', style: TextStyle(fontSize: 13)),
-                                    const SizedBox(width: 16),
-                                    Icon(Icons.people, size: 18, color: Colors.blue.shade300),
-                                    const SizedBox(width: 4),
-                                    Text('${recipe['servings']} kişilik', style: TextStyle(fontSize: 13)),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 40,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      // Burada "Bu Tarifi Deneyeceğim" fonksiyonu olacak
-                                      print('Bu Tarifi Deneyeceğim: ${recipe['title']}');
-                                    },
-                                    child: Text('Bu Tarifi Deneyeceğim', style: TextStyle(fontWeight: FontWeight.bold)),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.pink.shade400,
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      elevation: 1,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
             ),
           ],
         ),

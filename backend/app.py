@@ -538,68 +538,80 @@ def suggest_recipes():
         print('[DEBUG] Database error:', str(e))
         return jsonify({'error': str(e)}), 500
 
+def translate_recipe_keys(recipe):
+    """Gemini API'dan gelen Türkçe/karışık anahtarları İngilizce'ye çevirir ve eksik alanları tamamlar"""
+    key_map = {
+        "Başlık": "title",
+        "İsim": "title",
+        "Malzemeler": "ingredients",
+        "Hazırlanış": "instructions",
+        "Hazırlama Süresi": "preparation_time",
+        "Hazırlık": "preparation_time",
+        "Pişirme Süresi": "cooking_time",
+        "Süre": "cooking_time",
+        "Porsiyon": "serving_size"
+    }
+    mapped = {}
+    for k, v in recipe.items():
+        eng_key = key_map.get(k.strip(), k.strip().lower())
+        mapped[eng_key] = v
+    # Eksik alanlar için default değerler
+    mapped.setdefault('title', '')
+    mapped.setdefault('ingredients', '')
+    mapped.setdefault('instructions', '')
+    mapped.setdefault('serving_size', '')
+    mapped.setdefault('preparation_time', '')
+    mapped.setdefault('cooking_time', '')
+    return mapped
+
+# Basit malzeme çıkarıcı fonksiyon (örnek)
+def extract_ingredients_from_text(text, known_ingredients=None):
+    if known_ingredients is None:
+        # Kendi veritabanındaki Ingredient tablosundan veya sabit bir listeden çekebilirsin
+        known_ingredients = [
+            'domates', 'peynir', 'makarna', 'biber', 'patates', 'yumurta', 'süt', 'un', 'tavuk', 'et',
+            'soğan', 'sarımsak', 'zeytinyağı', 'pirinç', 'bulgur', 'yoğurt', 'salça', 'şeker', 'tuz',
+            'elma', 'muz', 'limon', 'havuç', 'kabak', 'ıspanak', 'fasulye', 'mercimek', 'nohut', 'sucuk',
+            'balık', 'krema', 'tereyağı', 'maydanoz', 'dereotu', 'nane', 'kekik', 'karabiber', 'pul biber',
+            'zeytin', 'mısır', 'bezelye', 'karnabahar', 'brokoli', 'lahana', 'kereviz', 'patlıcan', 'kabak',
+            'ceviz', 'fındık', 'badem', 'fıstık', 'çikolata', 'vanilya', 'tarçın', 'susam', 'ketçap', 'mayonez'
+        ]
+    text_lower = text.lower()
+    found = [ing for ing in known_ingredients if ing in text_lower]
+    return found
+
 @app.route('/api/ai_recipe', methods=['POST'])
 def ai_recipe():
     try:
         data = request.get_json(force=True)
-        ingredients = data.get('ingredients', [])
-        if not ingredients or not isinstance(ingredients, list):
-            return jsonify({'error': 'ingredients alanı zorunlu ve liste olmalı'}), 400
+        user_message = data.get('user_message', '').strip()
+        if not user_message:
+            return jsonify({'error': 'user_message field is required and must be a non-empty string'}), 400
 
-        # Gemini API anahtarını ortam değişkeninden al
-        GEMINI_API_KEY = "AIzaSyBYITo8SvLOJdrAd5ITVwitLb9-43_gwN8"
-        GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        # Serbest metinden malzeme listesini çıkar
+        ingredients = extract_ingredients_from_text(user_message)
+        if not ingredients:
+            return jsonify({'error': 'No recognizable ingredients found in your message.'}), 400
 
-        # Promptu hazırla
-        prompt = f"""
-Elimde şu malzemeler var: {', '.join(ingredients)}.
-Bu malzemelerle yapılabilecek 5 farklı yemek tarifi öner.
-Her tarifi aşağıdaki formatta bir Python sözlüğü (dict) olarak oluştur:
-{{
-  "Başlık": "...",
-  "Malzemeler": "...",
-  "Hazırlanış": "...",
-  "Hazırlama Süresi": ...,
-  "Pişirme Süresi": ...,
-  "Porsiyon": ...
-}}
-Tüm tarifleri bir listeye koy ve SADECE geçerli bir JSON olarak döndür. Açıklama, başlık veya başka hiçbir şey ekleme.
-"""
-        gemini_data = {
-            "contents": [
-                {"parts": [{"text": prompt}]}
-            ]
-        }
-        response = requests.post(GEMINI_URL, json=gemini_data)
-        response_json = response.json()
-        # Yanıtı işle
-        if "candidates" not in response_json:
-            return jsonify({'error': response_json}), 500
-        gemini_text = response_json['candidates'][0]['content']['parts'][0]['text']
-        # Yanıtı JSON'a parse et
-        import json
-        try:
-            # Sadece ilk ve son köşeli parantez arasını al
-            start = gemini_text.find('[')
-            end = gemini_text.rfind(']')
-            if start != -1 and end != -1:
-                json_str = gemini_text[start:end+1]
-            else:
-                json_str = gemini_text
-            recipes = json.loads(json_str)
-            # Gemini yanıtını terminale yazdır
-            print('Gemini yanıtı:', json_str)
-            # Eksik alanları tamamla
-            for r in recipes:
-                r.setdefault('Başlık', '')
-                r.setdefault('Malzemeler', '')
-                r.setdefault('Hazırlanış', '')
-                r.setdefault('Hazırlama Süresi', 0)
-                r.setdefault('Pişirme Süresi', 0)
-                r.setdefault('Porsiyon', 0)
-        except Exception as e:
-            return jsonify({'error': 'Gemini yanıtı JSON olarak parse edilemedi', 'raw': gemini_text}), 500
-        return Response(json.dumps(recipes, ensure_ascii=False), content_type="application/json; charset=utf-8")
+        # Gemini için prompt oluştur
+        prompt = (
+            f"Aşağıdaki malzemelerle 10 farklı yaratıcı yemek tarifi öner. "
+            f"Sadece geçerli bir JSON array döndür. "
+            f"Her tarifin alanları: title, ingredients, instructions, serving_size, preparation_time, cooking_time. "
+            f"Başka hiçbir açıklama, metin veya markdown ekleme. "
+            f"Malzemeler: {', '.join(ingredients)}"
+        )
+        reply, err = gemini_generate_content(prompt)
+        if err:
+            return jsonify({'error': err}), 500
+        _, ai_recipes = parse_ai_recipes(reply)
+        print('[DEBUG] Gemini yanıtı:', reply)
+        print('[DEBUG] Parse edilen tarifler:', ai_recipes)
+        from flask import Response
+        return Response(
+            json.dumps(ai_recipes[:8], ensure_ascii=False),
+            content_type="application/json; charset=utf-8"
+        )
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -636,6 +648,43 @@ def ai_chat():
 def handle_auth_error(e):
     print('JWT HATASI:', str(e))
     return make_response(jsonify({'error': 'JWT HATASI', 'detail': str(e)}), 401)
+
+def gemini_generate_content(prompt):
+    """Gemini API'ya prompt gönderir ve yanıtı döndürür."""
+    try:
+        GEMINI_API_KEY = "AIzaSyBYITo8SvLOJdrAd5ITVwitLb9-43_gwN8"
+        GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        data = {
+            "contents": [
+                {"parts": [{"text": prompt}]}
+            ]
+        }
+        response = requests.post(GEMINI_URL, json=data)
+        response_json = response.json()
+        if "candidates" not in response_json:
+            return None, response_json
+        gemini_reply = response_json['candidates'][0]['content']['parts'][0]['text']
+        return gemini_reply, None
+    except Exception as e:
+        return None, str(e)
+
+def parse_ai_recipes(reply):
+    """Gemini'den gelen metni JSON tarif listesine çevirir."""
+    # JSON bloklarını ayıkla
+    try:
+        # JSON bloklarını bul
+        matches = re.findall(r'\{[\s\S]*?\}', reply)
+        recipes = []
+        for m in matches:
+            try:
+                recipe = json.loads(m)
+                recipe = translate_recipe_keys(recipe)
+                recipes.append(recipe)
+            except Exception:
+                continue
+        return None, recipes
+    except Exception as e:
+        return str(e), []
 
 if __name__ == '__main__':
     try:
