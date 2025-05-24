@@ -32,7 +32,7 @@ class RecipeService {
 
         print('Response status code: ${response.statusCode}');
         if (response.statusCode == 200) {
-          final responseBody = response.body;
+          final responseBody = utf8.decode(response.bodyBytes);
           print('Response body: $responseBody');
           
           if (responseBody.isEmpty) {
@@ -592,6 +592,35 @@ class RecipeService {
     } catch (e) {
       print('[DEBUG] Error in suggestRecipes: $e');
       throw Exception('Tarif önerileri alınırken bir hata oluştu: $e');
+    }
+  }
+
+  Future<bool> deleteRecipe(int recipeId, int userId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/recipes/$recipeId?user_id=$userId'),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> updateRecipe(Map<String, dynamic> updatedFields) async {
+    try {
+      final id = updatedFields['id'];
+      final response = await http.put(
+        Uri.parse('$baseUrl/recipes/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(updatedFields),
+      );
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
     }
   }
 } 

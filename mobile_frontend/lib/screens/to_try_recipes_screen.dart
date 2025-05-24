@@ -134,9 +134,47 @@ class _ToTryRecipesScreenState extends State<ToTryRecipesScreen> {
                               ),
                             ),
                             const SizedBox(height: 8),
+                            Text('Malzemeler:', style: TextStyle(fontWeight: FontWeight.bold)),
                             Text(
-                              recipe['ingredients'] ?? 'Malzemeler belirtilmemiş',
+                              recipe['ingredients'] ?? recipe['ai_ingredients'] ?? 'Malzemeler belirtilmemiş',
                               style: const TextStyle(fontSize: 14),
+                            ),
+                            const SizedBox(height: 6),
+                            Text('Hazırlanış:', style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              recipe['instructions'] ?? recipe['ai_instructions'] ?? 'Hazırlanış bilgisi yok',
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                if ((recipe['serving_size'] ?? recipe['ai_serving_size']) != null && (recipe['serving_size'] ?? recipe['ai_serving_size']).toString().isNotEmpty)
+                                  Row(
+                                    children: [
+                                      Icon(Icons.people, size: 16, color: Colors.grey),
+                                      const SizedBox(width: 3),
+                                      Text((recipe['serving_size'] ?? recipe['ai_serving_size']).toString(), style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+                                      const SizedBox(width: 12),
+                                    ],
+                                  ),
+                                if ((recipe['cooking_time'] ?? recipe['ai_cooking_time']) != null && (recipe['cooking_time'] ?? recipe['ai_cooking_time']).toString().isNotEmpty)
+                                  Row(
+                                    children: [
+                                      Icon(Icons.timer, size: 16, color: Colors.grey),
+                                      const SizedBox(width: 3),
+                                      Text((recipe['cooking_time'] ?? recipe['ai_cooking_time']).toString(), style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+                                      const SizedBox(width: 12),
+                                    ],
+                                  ),
+                                if ((recipe['preparation_time'] ?? recipe['ai_preparation_time']) != null && (recipe['preparation_time'] ?? recipe['ai_preparation_time']).toString().isNotEmpty)
+                                  Row(
+                                    children: [
+                                      Icon(Icons.kitchen, size: 16, color: Colors.grey),
+                                      const SizedBox(width: 3),
+                                      Text((recipe['preparation_time'] ?? recipe['ai_preparation_time']).toString(), style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+                                    ],
+                                  ),
+                              ],
                             ),
                             const SizedBox(height: 16),
                             Row(

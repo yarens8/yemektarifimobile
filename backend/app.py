@@ -734,6 +734,45 @@ def add_to_try():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/recipes/<int:recipe_id>', methods=['PUT'])
+def update_recipe(recipe_id):
+    """Tarifi günceller"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        
+        if not user_id:
+            return jsonify({'error': 'Kullanıcı ID gerekli'}), 400
+            
+        success, message = db_service.update_recipe(recipe_id, user_id, data)
+        
+        if success:
+            return jsonify({'message': message}), 200
+        else:
+            return jsonify({'error': message}), 400
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/recipes/<int:recipe_id>', methods=['DELETE'])
+def delete_recipe(recipe_id):
+    """Tarifi siler"""
+    try:
+        user_id = request.args.get('user_id')
+        
+        if not user_id:
+            return jsonify({'error': 'Kullanıcı ID gerekli'}), 400
+            
+        success, message = db_service.delete_recipe(recipe_id, int(user_id))
+        
+        if success:
+            return jsonify({'message': message}), 200
+        else:
+            return jsonify({'error': message}), 400
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     try:
         logger.info("Starting the server...")

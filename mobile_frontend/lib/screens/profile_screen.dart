@@ -153,7 +153,7 @@ class ProfileScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => UserRecipesScreen(userId: user.id),
+                        builder: (context) => MyRecipesScreen(),
                       ),
                     );
                   } else {

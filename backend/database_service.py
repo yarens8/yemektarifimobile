@@ -140,7 +140,7 @@ class DatabaseService:
                         'title': recipes[0].get('title'),
                         'ingredients': recipes[0].get('ingredients')[:100] + '...' if recipes[0].get('ingredients') else None
                     })
-                return recipes
+                return recipes[:150]
                 
         except Exception as e:
             print(f"[DEBUG] get_recipes hatası: {str(e)}")
@@ -428,27 +428,49 @@ class DatabaseService:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
-                    SELECT
-                        id,
-                        title,
-                        views
-                    FROM [dbo].[Recipe]
-                    WHERE user_id = ?
-                    ORDER BY created_at DESC
+                    SELECT 
+                        r.id AS id, 
+                        r.title AS title, 
+                        r.views AS views, 
+                        r.created_at AS created_at, 
+                        r.cooking_time AS cooking_time,
+                        r.image_filename AS image_filename, 
+                        r.ingredients AS ingredients,
+                        r.instructions AS instructions,
+                        r.tips AS tips,
+                        COALESCE(r.serving_size, 'Bilinmiyor') AS serving_size,
+                        r.category_id AS category_id,
+                        r.user_id AS user_id,
+                        u.username AS username,
+                        r.preparation_time AS preparation_time,
+                        COALESCE(r.average_rating, 0.0) AS average_rating,
+                        COALESCE(r.rating_count, 0) AS rating_count
+                    FROM [dbo].[Recipe] r
+                    LEFT JOIN [dbo].[User] u ON r.user_id = u.id
+                    WHERE r.user_id = ?
+                    ORDER BY r.created_at DESC
                 """, (user_id,))
-                
+                columns = [column[0] for column in cursor.description]
                 recipes = []
                 for row in cursor.fetchall():
-                    recipes.append({
-                        'id': row[0],
-                        'title': row[1],
-                        'views': row[2]
-                    })
-                
+                    recipe = dict(zip(columns, row))
+                    if recipe.get('created_at'):
+                        recipe['created_at'] = recipe['created_at'].isoformat()
+                    if not recipe.get('serving_size'):
+                        recipe['serving_size'] = 'Bilinmiyor'
+                    if not recipe.get('username'):
+                        recipe['username'] = 'Anonim'
+                    # Tüm metin alanlarını UTF-8 ile encode/decode et
+                    for k, v in recipe.items():
+                        if v is None:
+                            recipe[k] = ''
+                        elif not isinstance(v, (int, float, str)):
+                            recipe[k] = str(v)
+                    recipes.append(recipe)
                 print(f"Found {len(recipes)} recipes")  # Debug log
                 print("Recipes:", recipes)  # Debug log
-                return recipes
-                
+                return recipes[:20]
+        
         except Exception as e:
             print(f"Error in get_user_recipes: {str(e)}")  # Debug log
             raise Exception(f"Kullanıcının tarifleri getirilirken hata oluştu: {str(e)}")
@@ -519,6 +541,7 @@ class DatabaseService:
                         COALESCE(r.serving_size, 'Bilinmiyor') AS serving_size,
                         r.category_id AS category_id,
                         r.user_id AS user_id,
+                        u.username AS username,
                         r.preparation_time AS preparation_time,
                         COALESCE(r.average_rating, 0.0) AS average_rating,
                         COALESCE(r.rating_count, 0) AS rating_count,
@@ -541,6 +564,8 @@ class DatabaseService:
                         recipe['serving_size'] = 'Bilinmiyor'
                     if not recipe.get('favorite_count'):
                         recipe['favorite_count'] = 0
+                    if not recipe.get('username'):
+                        recipe['username'] = 'Anonim'
                     recipes.append(recipe)
                 return recipes, None
                 
@@ -943,6 +968,96 @@ class DatabaseService:
         except Exception as e:
             print(f"Error in add_to_try: {str(e)}")
             return False, f"Hata oluştu: {str(e)}"
+
+    def update_recipe(self, recipe_id, user_id, data):
+        """Tarifi günceller"""
+        try:
+            # Önce tarifin kullanıcıya ait olup olmadığını kontrol et
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT user_id FROM [dbo].[Recipe] WHERE id = ?
+                """, (recipe_id,))
+                result = cursor.fetchone()
+                
+                if not result:
+                    return False, "Tarif bulunamadı"
+                
+                if result[0] != user_id:
+                    return False, "Bu tarifi düzenleme yetkiniz yok"
+                
+                # Tarifi güncelle
+                update_query = """
+                    UPDATE [dbo].[Recipe]
+                    SET 
+                        title = ?,
+                        category_id = ?,
+                        ingredients = ?,
+                        instructions = ?,
+                        serving_size = ?,
+                        preparation_time = ?,
+                        cooking_time = ?,
+                        tips = ?,
+                        image_filename = ?
+                    WHERE id = ? AND user_id = ?
+                """
+                
+                cursor.execute(update_query, (
+                    data.get('title'),
+                    data.get('category_id'),
+                    data.get('ingredients'),
+                    data.get('instructions'),
+                    data.get('servings'),
+                    data.get('prep_time'),
+                    data.get('cook_time'),
+                    data.get('tips'),
+                    data.get('image_url'),
+                    recipe_id,
+                    user_id
+                ))
+                
+                conn.commit()
+                return True, "Tarif başarıyla güncellendi"
+                
+        except Exception as e:
+            print(f"Error updating recipe: {str(e)}")
+            if 'conn' in locals():
+                conn.rollback()
+            return False, f"Tarif güncellenirken hata oluştu: {str(e)}"
+
+    def delete_recipe(self, recipe_id, user_id):
+        """Tarifi siler"""
+        try:
+            # Önce tarifin kullanıcıya ait olup olmadığını kontrol et
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT user_id FROM [dbo].[Recipe] WHERE id = ?
+                """, (recipe_id,))
+                result = cursor.fetchone()
+                
+                if not result:
+                    return False, "Tarif bulunamadı"
+                
+                if result[0] != user_id:
+                    return False, "Bu tarifi silme yetkiniz yok"
+                
+                # İlişkili kayıtları sil
+                cursor.execute("DELETE FROM [dbo].[RecipeRating] WHERE recipe_id = ?", (recipe_id,))
+                cursor.execute("DELETE FROM [dbo].[Comment] WHERE recipe_id = ?", (recipe_id,))
+                cursor.execute("DELETE FROM [dbo].[favorites] WHERE recipe_id = ?", (recipe_id,))
+                
+                # Tarifi sil
+                cursor.execute("DELETE FROM [dbo].[Recipe] WHERE id = ? AND user_id = ?", (recipe_id, user_id))
+                
+                conn.commit()
+                return True, "Tarif başarıyla silindi"
+                
+        except Exception as e:
+            print(f"Error deleting recipe: {str(e)}")
+            if 'conn' in locals():
+                conn.rollback()
+            return False, f"Tarif silinirken hata oluştu: {str(e)}"
 
 # Singleton instance
 db_service = DatabaseService() 

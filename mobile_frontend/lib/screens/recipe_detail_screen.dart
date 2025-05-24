@@ -370,6 +370,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
   }
 
+  String _formatCookingTime(String? time) {
+    if (time == null || time.isEmpty) return '';
+    final t = time.trim().toLowerCase();
+    if (t.endsWith('dk') || t.endsWith('dakika')) {
+      return time;
+    }
+    return '$time dakika';
+  }
+
   Widget _infoChip(IconData icon, String label, Color bgColor, Color iconColor) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -503,7 +512,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                               children: [
                             Row(
                               children: [
-                                Expanded(child: _infoChip(Icons.timer, '${_recipe!.cookingTime ?? ''} dakika', Colors.blue.shade50, Colors.blue)),
+                                Expanded(child: _infoChip(Icons.timer, _formatCookingTime(_recipe!.cookingTime), Colors.blue.shade50, Colors.blue)),
                                 const SizedBox(width: 8),
                                     Expanded(child: _infoChip(Icons.groups, 'Porsiyon: ${_recipe!.servingSize ?? 'Bilinmiyor'}', Colors.green.shade50, Colors.green)),
                                   ],
