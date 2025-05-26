@@ -52,6 +52,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     super.dispose();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Ekrana her gelindiğinde güncel veriyi çek
+    if (_recipe != null) {
+      _loadRecipeDetails();
+    }
+  }
+
   Future<void> _loadUserRating() async {
     final user = context.read<UserProvider>().currentUser;
     if (user != null && _recipe != null) {
@@ -289,6 +298,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               difficulty: recipe.difficulty,
               createdAt: recipe.createdAt,
               updatedAt: recipe.updatedAt,
+              averageRating: recipe.averageRating,
+              ratingCount: recipe.ratingCount,
+              userRating: recipe.userRating,
             );
           });
         }

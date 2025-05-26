@@ -773,6 +773,17 @@ def delete_recipe(recipe_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/recipes/<int:recipe_id>', methods=['GET'])
+def get_recipe_detail(recipe_id):
+    recipe = db_service.get_recipe_detail(recipe_id)
+    if recipe:
+        return Response(
+            json.dumps(recipe, ensure_ascii=False, cls=CustomJSONEncoder),
+            content_type="application/json; charset=utf-8"
+        )
+    else:
+        return jsonify({'error': 'Tarif bulunamadı'}), 404
+
 if __name__ == '__main__':
     try:
         logger.info("Starting the server...")

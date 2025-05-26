@@ -865,7 +865,6 @@ class DatabaseService:
                     SELECT 
                         r.[id],
                         r.[title],
-                        r.[description],
                         r.[ingredients],
                         r.[instructions],
                         r.[created_at],
@@ -1007,11 +1006,11 @@ class DatabaseService:
                     data.get('category_id'),
                     data.get('ingredients'),
                     data.get('instructions'),
-                    data.get('servings'),
+                    data.get('serving_size'),
                     data.get('prep_time'),
-                    data.get('cook_time'),
+                    data.get('cooking_time'),
                     data.get('tips'),
-                    data.get('image_url'),
+                    data.get('image_filename'),
                     recipe_id,
                     user_id
                 ))

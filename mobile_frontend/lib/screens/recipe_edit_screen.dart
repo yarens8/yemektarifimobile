@@ -60,6 +60,14 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
 
   Future<void> _updateRecipe() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_servingsController.text.trim().isEmpty ||
+        _imageController.text.trim().isEmpty ||
+        _instructionsController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen tüm zorunlu alanları doldurun!')),
+      );
+      return;
+    }
     setState(() => _isLoading = true);
     final updatedFields = {
       'id': widget.recipe.id,
@@ -73,7 +81,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
       'image_filename': _imageController.text,
       'category_id': _selectedCategoryId,
       'user_id': widget.recipe.userId,
-      'description': _instructionsController.text,
     };
     final result = await RecipeService().updateRecipe(updatedFields);
     setState(() => _isLoading = false);
@@ -160,14 +167,25 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _FieldLabel('Açıklama / Hazırlanış'),
+                    _FieldLabel('Hazırlanış'),
                     _FieldCard(
                       child: TextFormField(
                         controller: _instructionsController,
                         decoration: _inputDecoration('Hazırlanışı yazın'),
                         maxLines: 5,
                         style: const TextStyle(fontSize: 16, color: kText),
-                        validator: (v) => v == null || v.isEmpty ? 'Açıklama gerekli' : null,
+                        validator: (v) => v == null || v.isEmpty ? 'Hazırlanış gerekli' : null,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _FieldLabel('Püf Noktası'),
+                    _FieldCard(
+                      child: TextFormField(
+                        controller: _tipsController,
+                        decoration: _inputDecoration('Varsa püf noktası yazın (isteğe bağlı)'),
+                        maxLines: 2,
+                        style: const TextStyle(fontSize: 16, color: kText),
+                        // İsteğe bağlı, validator yok
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -225,21 +243,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _FieldLabel('İpucu'),
-                              _FieldCard(
-                                child: TextFormField(
-                                  controller: _tipsController,
-                                  decoration: _inputDecoration('Varsa ipucu'),
-                                  style: const TextStyle(fontSize: 16, color: kText),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 20),
