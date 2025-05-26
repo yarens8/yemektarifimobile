@@ -3,6 +3,8 @@ import 'package:logging/logging.dart';
 import '../services/api_service.dart';
 import '../models/recipe.dart';
 import 'recipe_detail_screen.dart';
+import '../providers/user_provider.dart';
+import 'package:provider/provider.dart';
 
 class CategoryRecipesScreen extends StatefulWidget {
   final int categoryId;
@@ -27,12 +29,15 @@ class _CategoryRecipesScreenState extends State<CategoryRecipesScreen> {
   @override
   void initState() {
     super.initState();
-    _loadRecipes();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userId = Provider.of<UserProvider>(context, listen: false).userId;
+      _loadRecipes(userId);
+    });
   }
 
-  Future<void> _loadRecipes() async {
+  Future<void> _loadRecipes(int? userId) async {
     try {
-      final recipes = await _apiService.getRecipesByCategory(widget.categoryId);
+      final recipes = await _apiService.getRecipesByCategory(widget.categoryId, userId: userId);
       setState(() {
         _recipes = recipes;
         _isLoading = false;
@@ -114,16 +119,29 @@ class _CategoryRecipesScreenState extends State<CategoryRecipesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              child: recipe['image_filename'] != null && recipe['image_filename'].toString().isNotEmpty
-                  ? Image.asset(
-                      'assets/recipe_images/${recipe['image_filename']}',
-                      height: 200,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  child: recipe['image_filename'] != null && recipe['image_filename'].toString().isNotEmpty
+                      ? Image.asset(
+                          'assets/recipe_images/${recipe['image_filename']}',
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 200,
+                              color: Colors.grey[300],
+                              child: const Icon(
+                                Icons.restaurant,
+                                size: 64,
+                                color: Colors.grey,
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
                           height: 200,
                           color: Colors.grey[300],
                           child: const Icon(
@@ -131,18 +149,19 @@ class _CategoryRecipesScreenState extends State<CategoryRecipesScreen> {
                             size: 64,
                             color: Colors.grey,
                           ),
-                        );
-                      },
-                    )
-                  : Container(
-                      height: 200,
-                      color: Colors.grey[300],
-                      child: const Icon(
-                        Icons.restaurant,
-                        size: 64,
-                        color: Colors.grey,
-                      ),
-                    ),
+                        ),
+                ),
+                // Favori kalp ikonu
+                Positioned(
+                  right: 16,
+                  top: 16,
+                  child: Icon(
+                    recipe['is_favorited'] == true ? Icons.favorite : Icons.favorite_border,
+                    color: recipe['is_favorited'] == true ? Colors.pink : Colors.grey,
+                    size: 28,
+                  ),
+                ),
+              ],
             ),
             Padding(
               padding: const EdgeInsets.all(16),

@@ -1,20 +1,49 @@
 import 'package:flutter/material.dart';
 import '../models/recipe.dart';
+import 'dart:io';
 
 class RecipeCard extends StatelessWidget {
   final Recipe recipe;
   final bool showMatchingIngredients;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const RecipeCard({
     Key? key,
     required this.recipe,
     this.showMatchingIngredients = false,
     this.onTap,
+    this.onEdit,
+    this.onDelete,
   }) : super(key: key);
+
+  String _formatCookingTime(String? time) {
+    if (time == null || time.isEmpty) return '';
+    final t = time.trim().toLowerCase();
+    if (t.endsWith('dk') || t.endsWith('dakika')) {
+      return time;
+    }
+    return '$time dk';
+  }
 
   @override
   Widget build(BuildContext context) {
+    String? imagePath;
+    if (recipe.imageFilename.isNotEmpty) {
+      imagePath = 'assets/recipe_images/${recipe.imageFilename}';
+    } else {
+      // Başlıktan dosya adı üret
+      final imageName = recipe.title.toLowerCase()
+          .replaceAll(' ', '_')
+          .replaceAll('ş', 's')
+          .replaceAll('ı', 'i')
+          .replaceAll('ö', 'o')
+          .replaceAll('ü', 'u')
+          .replaceAll('ğ', 'g')
+          .replaceAll('ç', 'c');
+      imagePath = 'assets/recipe_images/$imageName.jpg';
+    }
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(
@@ -32,16 +61,45 @@ class RecipeCard extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.asset(
-                  'assets/recipe_images/${recipe.imageFilename}',
+                  imagePath,
                   width: 64,
                   height: 64,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 64,
-                    height: 64,
-                    color: Colors.grey[200],
-                    child: Icon(Icons.restaurant, color: Colors.grey[400]),
-                  ),
+                  errorBuilder: (context, error, stackTrace) {
+                    // .jpeg ve .png uzantılarını da sırayla dene
+                    final imageName = recipe.imageFilename.isNotEmpty
+                        ? recipe.imageFilename.split('.').first
+                        : recipe.title.toLowerCase()
+                            .replaceAll(' ', '_')
+                            .replaceAll('ş', 's')
+                            .replaceAll('ı', 'i')
+                            .replaceAll('ö', 'o')
+                            .replaceAll('ü', 'u')
+                            .replaceAll('ğ', 'g')
+                            .replaceAll('ç', 'c');
+                    return Image.asset(
+                      'assets/recipe_images/$imageName.jpeg',
+                      width: 64,
+                      height: 64,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Image.asset(
+                          'assets/recipe_images/$imageName.png',
+                          width: 64,
+                          height: 64,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 64,
+                              height: 64,
+                              color: Colors.grey[200],
+                              child: Icon(Icons.restaurant, color: Colors.grey[400]),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -50,10 +108,21 @@ class RecipeCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Tarif başlığı
-                    Text(
-                      recipe.title,
-                      style: Theme.of(context).textTheme.titleLarge,
+                    // Tarif başlığı ve favori kalp ikonu
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            recipe.title,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                        Icon(
+                          recipe.isFavorited ? Icons.favorite : Icons.favorite_border,
+                          color: recipe.isFavorited ? Colors.pink : Colors.grey,
+                          size: 22,
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
 
@@ -159,7 +228,7 @@ class RecipeCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            recipe.cookingTime != null ? '${recipe.cookingTime} dk' : '',
+                            _formatCookingTime(recipe.cookingTime),
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 14,
@@ -192,6 +261,42 @@ class RecipeCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    // Butonlar
+                    if (onEdit != null || onDelete != null) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          if (onEdit != null)
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: onEdit,
+                                icon: const Icon(Icons.edit, size: 18),
+                                label: const Text('Düzenle'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                ),
+                              ),
+                            ),
+                          if (onEdit != null && onDelete != null)
+                            const SizedBox(width: 8),
+                          if (onDelete != null)
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: onDelete,
+                                icon: const Icon(Icons.delete, size: 18),
+                                label: const Text('Sil'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

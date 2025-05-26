@@ -52,6 +52,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     super.dispose();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Ekrana her gelindiğinde güncel veriyi çek
+    if (_recipe != null) {
+      _loadRecipeDetails();
+    }
+  }
+
   Future<void> _loadUserRating() async {
     final user = context.read<UserProvider>().currentUser;
     if (user != null && _recipe != null) {
@@ -98,7 +107,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   Future<void> _loadRecipeDetails() async {
     try {
       if (widget.recipeId != null) {
-        final loadedRecipe = await _recipeService.getRecipeDetail(widget.recipeId!);
+        final user = context.read<UserProvider>().currentUser;
+        final loadedRecipe = await _recipeService.getRecipeDetail(
+          widget.recipeId!,
+          userId: user?.id,
+        );
         if (mounted && loadedRecipe != null) {
           setState(() {
             _recipe = loadedRecipe;
@@ -289,6 +302,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               difficulty: recipe.difficulty,
               createdAt: recipe.createdAt,
               updatedAt: recipe.updatedAt,
+              averageRating: recipe.averageRating,
+              ratingCount: recipe.ratingCount,
+              userRating: recipe.userRating,
             );
           });
         }
@@ -368,6 +384,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     if (mounted) {
       setState(() => _isRating = false);
     }
+  }
+
+  String _formatCookingTime(String? time) {
+    if (time == null || time.isEmpty) return '';
+    final t = time.trim().toLowerCase();
+    if (t.endsWith('dk') || t.endsWith('dakika')) {
+      return time;
+    }
+    return '$time dakika';
   }
 
   Widget _infoChip(IconData icon, String label, Color bgColor, Color iconColor) {
@@ -503,7 +528,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                               children: [
                             Row(
                               children: [
-                                Expanded(child: _infoChip(Icons.timer, '${_recipe!.cookingTime ?? ''} dakika', Colors.blue.shade50, Colors.blue)),
+                                Expanded(child: _infoChip(Icons.timer, _formatCookingTime(_recipe!.cookingTime), Colors.blue.shade50, Colors.blue)),
                                 const SizedBox(width: 8),
                                     Expanded(child: _infoChip(Icons.groups, 'Porsiyon: ${_recipe!.servingSize ?? 'Bilinmiyor'}', Colors.green.shade50, Colors.green)),
                                   ],

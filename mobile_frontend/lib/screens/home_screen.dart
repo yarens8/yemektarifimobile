@@ -7,6 +7,7 @@ import 'filter_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:http/http.dart' show HttpDate;
+import '../providers/user_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -38,9 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Widget oluşturulduğunda verileri yükle
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<RecipeProvider>().loadInitialData();
+      final userId = Provider.of<UserProvider>(context, listen: false).userId;
+      context.read<RecipeProvider>().loadInitialData(userId);
     });
   }
 
@@ -472,15 +473,15 @@ class RecipeSearchDelegate extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    return _buildSearchResults();
+    return _buildSearchResults(context);
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return _buildSearchResults();
+    return _buildSearchResults(context);
   }
 
-  Widget _buildSearchResults() {
+  Widget _buildSearchResults(BuildContext context) {
     if (query.isEmpty) {
       return Center(
         child: Column(
@@ -500,8 +501,9 @@ class RecipeSearchDelegate extends SearchDelegate<String> {
       );
     }
 
+    final userId = Provider.of<UserProvider>(context, listen: false).userId;
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _recipeProvider.searchRecipes(query),
+      future: _recipeProvider.searchRecipes(query, userId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
