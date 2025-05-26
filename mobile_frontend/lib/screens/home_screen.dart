@@ -151,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryList(RecipeProvider provider) {
-    final categories = provider.categories;
+    final categories = provider.categories.where((category) => category['name'] != 'Tümü').toList();
     
     return Container(
       height: 48,
@@ -245,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisCount: 2,
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
-          childAspectRatio: 0.8,
+          childAspectRatio: 0.68,
         ),
       ),
     );
@@ -272,7 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              height: 120,
+              height: 135,
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(12),
@@ -285,7 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       child: Image.asset(
                         'assets/recipe_images/${recipe['image_filename']}',
-                        height: 120,
+                        height: 135,
                         width: double.infinity,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
@@ -315,6 +315,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     )
                   : Container(
+                      height: 135,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
@@ -370,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ],
-                    const Spacer(),
+                    const SizedBox(height: 8),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -381,20 +382,28 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Colors.amber,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            (recipe['average_rating'] ?? 0.0).toStringAsFixed(1),
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey[800],
+                          Flexible(
+                            child: Text(
+                              (recipe['average_rating'] ?? 0.0).toStringAsFixed(1),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[800],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            '(${recipe['rating_count'] ?? 0})',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[600],
+                          Flexible(
+                            child: Text(
+                              '(${recipe['rating_count'] ?? 0})',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -405,11 +414,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: Colors.grey[600],
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          '${recipe['views'] ?? 0}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
+                        Flexible(
+                          child: Text(
+                            '${recipe['views'] ?? 0}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -558,14 +571,29 @@ class RecipeSearchDelegate extends SearchDelegate<String> {
           itemBuilder: (context, index) {
             final recipe = recipes[index];
             return ListTile(
-              leading: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.restaurant, color: Colors.grey.shade400),
+              leading: Builder(
+                builder: (context) {
+                  final imageFilename = recipe['image_filename'];
+                  if (imageFilename != null && imageFilename.toString().isNotEmpty) {
+                    final assetPath = 'assets/recipe_images/$imageFilename';
+                    print('Aranan dosya: $assetPath');
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.asset(
+                        assetPath,
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          print('Görsel bulunamadı: $assetPath');
+                          return Icon(Icons.restaurant, color: Colors.grey.shade400);
+                        },
+                      ),
+                    );
+                  } else {
+                    return Icon(Icons.restaurant, color: Colors.grey.shade400);
+                  }
+                },
               ),
               title: Text(recipe['title'] ?? ''),
               subtitle: Text(

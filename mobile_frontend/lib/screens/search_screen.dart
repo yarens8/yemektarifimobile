@@ -179,20 +179,31 @@ class RecipeSearchDelegate extends SearchDelegate<String> {
           itemCount: recipes.length,
           itemBuilder: (context, index) {
             final recipe = recipes[index];
-            print('Aranan dosya: assets/recipe_images/[1m${recipe['image_filename']}[0m');
             return ListTile(
-              leading: (recipe['image_filename'] != null && recipe['image_filename'].toString().isNotEmpty)
-                  ? ClipRRect(
+              leading: Builder(
+                builder: (context) {
+                  final imageFilename = recipe['image_filename'];
+                  if (imageFilename != null && imageFilename.toString().isNotEmpty) {
+                    final assetPath = 'assets/recipe_images/$imageFilename';
+                    print('Aranan dosya: $assetPath');
+                    return ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.asset(
-                        'assets/recipe_images/${recipe['image_filename']}',
+                        assetPath,
                         width: 56,
                         height: 56,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Icon(Icons.restaurant, color: Colors.grey.shade400),
+                        errorBuilder: (context, error, stackTrace) {
+                          print('Görsel bulunamadı: $assetPath');
+                          return Icon(Icons.restaurant, color: Colors.grey.shade400);
+                        },
                       ),
-                    )
-                  : Icon(Icons.restaurant, color: Colors.grey.shade400),
+                    );
+                  } else {
+                    return Icon(Icons.restaurant, color: Colors.grey.shade400);
+                  }
+                },
+              ),
               title: Text(recipe['title'] ?? ''),
               subtitle: Text(recipe['preparation_time'] ?? ''),
               trailing: Text('${recipe['views'] ?? 0} görüntülenme'),

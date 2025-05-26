@@ -107,8 +107,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       if (result['success']) {
         // Başarılı mesajı göster
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message']),
+          const SnackBar(
+            content: Text('Tarif başarıyla eklendi'),
             backgroundColor: Colors.green,
           ),
         );

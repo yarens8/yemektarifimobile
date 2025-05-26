@@ -46,7 +46,9 @@ class RecipeProvider extends ChangeNotifier {
       // Tarifleri kategorilere göre grupla
       _recipesByCategory.clear();
       for (var recipe in recipes) {
-        final categoryId = recipe['category_id'] as int;
+        print('Tarif: \'${recipe['title']}\' - category_id: \'${recipe['category_id']}\'');
+        final categoryId = int.tryParse(recipe['category_id'].toString());
+        if (categoryId == null) continue;
         if (!_recipesByCategory.containsKey(categoryId)) {
           _recipesByCategory[categoryId] = [];
         }

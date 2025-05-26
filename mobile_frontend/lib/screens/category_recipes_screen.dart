@@ -184,11 +184,15 @@ class _CategoryRecipesScreenState extends State<CategoryRecipesScreen> {
                         color: Colors.grey[600],
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        '${recipe['preparation_time'] ?? 0} dk',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
+                      Flexible(
+                        child: Text(
+                          '${recipe['preparation_time'] ?? 0} ',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -198,11 +202,15 @@ class _CategoryRecipesScreenState extends State<CategoryRecipesScreen> {
                         color: Colors.grey[600],
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        '${recipe['serving_size'] ?? 0} kişilik',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
+                      Flexible(
+                        child: Text(
+                          '${recipe['serving_size'] ?? 0} ',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if ((recipe['average_rating'] ?? 0) > 0) ...[
@@ -213,20 +221,28 @@ class _CategoryRecipesScreenState extends State<CategoryRecipesScreen> {
                           color: Colors.amber,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          (recipe['average_rating'] ?? 0.0).toStringAsFixed(1),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[800],
+                        Flexible(
+                          child: Text(
+                            (recipe['average_rating'] ?? 0.0).toStringAsFixed(1),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[800],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          '(${recipe['rating_count'] ?? 0})',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
+                        Flexible(
+                          child: Text(
+                            '(${recipe['rating_count'] ?? 0})',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

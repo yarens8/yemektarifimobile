@@ -46,7 +46,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final categories = recipeProvider.categories;
+        final categories = recipeProvider.categories.where((category) => category['name'] != 'Tümü').toList();
         
         return Scaffold(
           appBar: AppBar(
@@ -69,6 +69,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               itemBuilder: (context, index) {
                 final category = categories[index];
                 final recipes = recipeProvider.getRecipesForCategory(category['id']);
+                print('Kategori: \'${category['name']}\' (id: \'${category['id']}\') - Tarifler: \'${recipes.length}\'');
                 final color = _getCategoryColor(category['name'] ?? '');
                 
                 return Container(
@@ -218,7 +219,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       case 'tatlı':
         return 'Tatlı krizine çözümler';
       default:
-        return 'Lezzetli tarifler';
+        return 'Yapay zeka ile lezzetli tarifler';
     }
   }
 
@@ -266,6 +267,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         break;
       case 'tatlı':
         imagePath = 'assets/category_images/tatli.jpg';
+        break;
+      case 'yapay zeka tariflerim':
+        imagePath = 'assets/category_images/yapay_zeka_tariflerim.jpeg';
         break;
       default:
         return Icon(Icons.restaurant_menu_rounded, color: color, size: 28);
