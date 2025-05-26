@@ -67,11 +67,13 @@ class ApiService {
   }
 
   // Tüm tarifleri getir
-  Future<List<Map<String, dynamic>>> getRecipes() async {
+  Future<List<Map<String, dynamic>>> getRecipes({int? userId}) async {
     try {
       _logger.info('Tüm tarifler için API isteği yapılıyor...');
-      final response = await _dio.get('/api/recipes');
-      _logger.info('API yanıtı alındı. Status code: ${response.statusCode}');
+      final response = await _dio.get('/api/recipes', queryParameters: {
+        if (userId != null) 'user_id': userId,
+      });
+      _logger.info('API yanıtı alındı. Status code: [38;5;2m[1m[4m[7m${response.statusCode}[0m');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
@@ -93,10 +95,12 @@ class ApiService {
 
   // Kategoriye göre tarifleri getir
   Future<List<Map<String, dynamic>>> getRecipesByCategory(
-      int categoryId) async {
+      int categoryId, {int? userId}) async {
     try {
       print('Fetching recipes for category $categoryId...');  // Debug print
-      final response = await _dio.get('/api/recipes/category/$categoryId');
+      final response = await _dio.get('/api/recipes/category/$categoryId', queryParameters: {
+        if (userId != null) 'user_id': userId,
+      });
       print('Category recipes response: ${response.data}');  // Debug print
       
       if (response.data is List) {
@@ -127,10 +131,13 @@ class ApiService {
   }
 
   // Tarif ara
-  Future<List<Map<String, dynamic>>> searchRecipes(String query) async {
+  Future<List<Map<String, dynamic>>> searchRecipes(String query, {int? userId}) async {
     try {
       print('Searching recipes with query: $query');  // Debug print
-      final response = await _dio.get('/api/recipes/search', queryParameters: {'q': query});
+      final response = await _dio.get('/api/recipes/search', queryParameters: {
+        'q': query,
+        if (userId != null) 'user_id': userId,
+      });
       print('Search response: ${response.data}');  // Debug print
       
       if (response.data is List) {
@@ -144,10 +151,12 @@ class ApiService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getTopRecipes() async {
+  Future<List<Map<String, dynamic>>> getTopRecipes({int? userId}) async {
     try {
       print('Fetching top recipes...');  // Debug print
-      final response = await _dio.get('/api/top-recipes');
+      final response = await _dio.get('/api/top-recipes', queryParameters: {
+        if (userId != null) 'user_id': userId,
+      });
       print('Top recipes response: ${response.data}');  // Debug print
       
       if (response.data is List) {

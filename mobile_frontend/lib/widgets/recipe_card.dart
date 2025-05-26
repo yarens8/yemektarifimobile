@@ -108,10 +108,21 @@ class RecipeCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Tarif başlığı
-                    Text(
-                      recipe.title,
-                      style: Theme.of(context).textTheme.titleLarge,
+                    // Tarif başlığı ve favori kalp ikonu
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            recipe.title,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                        Icon(
+                          recipe.isFavorited ? Icons.favorite : Icons.favorite_border,
+                          color: recipe.isFavorited ? Colors.pink : Colors.grey,
+                          size: 22,
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
 

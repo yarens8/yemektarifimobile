@@ -1041,17 +1041,17 @@ class DatabaseService:
                 if result[0] != user_id:
                     return False, "Bu tarifi silme yetkiniz yok"
                 
-                # İlişkili kayıtları sil
+                # Önce UserRecipeList tablosundan ilişkili kayıtları sil
+                cursor.execute("DELETE FROM [dbo].[UserRecipeList] WHERE recipe_id = ?", (recipe_id,))
+                # Sonra diğer ilişkili kayıtları sil
                 cursor.execute("DELETE FROM [dbo].[RecipeRating] WHERE recipe_id = ?", (recipe_id,))
                 cursor.execute("DELETE FROM [dbo].[Comment] WHERE recipe_id = ?", (recipe_id,))
                 cursor.execute("DELETE FROM [dbo].[favorites] WHERE recipe_id = ?", (recipe_id,))
-                
                 # Tarifi sil
                 cursor.execute("DELETE FROM [dbo].[Recipe] WHERE id = ? AND user_id = ?", (recipe_id, user_id))
                 
                 conn.commit()
                 return True, "Tarif başarıyla silindi"
-                
         except Exception as e:
             print(f"Error deleting recipe: {str(e)}")
             if 'conn' in locals():

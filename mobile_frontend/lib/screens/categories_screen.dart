@@ -4,6 +4,7 @@ import '../providers/recipe_provider.dart';
 import 'recipe_detail_screen.dart';
 import 'category_recipes_screen.dart';
 import '../models/recipe.dart';
+import '../providers/user_provider.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -31,9 +32,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   @override
   void initState() {
     super.initState();
-    // Widget oluşturulduğunda verileri yükle
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<RecipeProvider>().loadInitialData();
+      final userId = Provider.of<UserProvider>(context, listen: false).userId;
+      context.read<RecipeProvider>().loadInitialData(userId);
     });
   }
 

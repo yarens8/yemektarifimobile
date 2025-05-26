@@ -107,7 +107,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   Future<void> _loadRecipeDetails() async {
     try {
       if (widget.recipeId != null) {
-        final loadedRecipe = await _recipeService.getRecipeDetail(widget.recipeId!);
+        final user = context.read<UserProvider>().currentUser;
+        final loadedRecipe = await _recipeService.getRecipeDetail(
+          widget.recipeId!,
+          userId: user?.id,
+        );
         if (mounted && loadedRecipe != null) {
           setState(() {
             _recipe = loadedRecipe;

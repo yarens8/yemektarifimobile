@@ -56,7 +56,16 @@ def get_categories():
 @app.route('/api/recipes', methods=['GET'])
 def get_recipes():
     try:
+        user_id = request.args.get('user_id')
         recipes = db_service.get_recipes()
+        # Her tarif için favori kontrolü ekle
+        if user_id:
+            for recipe in recipes:
+                is_favorited, _ = db_service.is_favorite(user_id, recipe['id'])
+                recipe['is_favorited'] = is_favorited
+        else:
+            for recipe in recipes:
+                recipe['is_favorited'] = False
         return jsonify(recipes)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -64,7 +73,15 @@ def get_recipes():
 @app.route('/api/recipes/category/<int:category_id>', methods=['GET'])
 def get_recipes_by_category(category_id):
     try:
+        user_id = request.args.get('user_id')
         recipes = db_service.get_recipes_by_category(category_id)
+        if user_id:
+            for recipe in recipes:
+                is_favorited, _ = db_service.is_favorite(user_id, recipe['id'])
+                recipe['is_favorited'] = is_favorited
+        else:
+            for recipe in recipes:
+                recipe['is_favorited'] = False
         print(f"Category {category_id} recipes response:", recipes)  # Debug print
         return jsonify(recipes)
     except Exception as e:
@@ -74,18 +91,32 @@ def get_recipes_by_category(category_id):
 @app.route('/api/top-recipes', methods=['GET'])
 def get_top_recipes():
     try:
+        user_id = request.args.get('user_id')
         recipes = db_service.get_top_recipes()
-        print("Top recipes endpoint response:", recipes)  # Debug print
+        if user_id:
+            for recipe in recipes:
+                is_favorited, _ = db_service.is_favorite(user_id, recipe['id'])
+                recipe['is_favorited'] = is_favorited
+        else:
+            for recipe in recipes:
+                recipe['is_favorited'] = False
         return jsonify(recipes)
     except Exception as e:
-        print(f"Error in top recipes endpoint: {str(e)}")  # Debug print
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/recipes/search', methods=['GET'])
 def search_recipes():
     try:
+        user_id = request.args.get('user_id')
         query = request.args.get('q', '')
         recipes = db_service.search_recipes(query)
+        if user_id:
+            for recipe in recipes:
+                is_favorited, _ = db_service.is_favorite(user_id, recipe['id'])
+                recipe['is_favorited'] = is_favorited
+        else:
+            for recipe in recipes:
+                recipe['is_favorited'] = False
         print(f"Search recipes response for query '{query}':", recipes)  # Debug print
         return jsonify(recipes)
     except Exception as e:
@@ -195,13 +226,16 @@ def change_password():
 def get_user_recipes(user_id):
     try:
         logger.info(f"Received request for user_id: {user_id}")
-        # user_id'yi int'e çevir
         user_id = int(user_id)
         logger.info(f"Converted user_id to int: {user_id}")
         
         recipes = db_service.get_user_recipes(user_id)
+        # Her tarif için favori kontrolü ekle
+        for recipe in recipes:
+            is_favorited, _ = db_service.is_favorite(user_id, recipe['id'])
+            recipe['is_favorited'] = is_favorited
+
         logger.info(f"Successfully retrieved {len(recipes)} recipes")
-        
         response = jsonify(recipes)
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
@@ -275,17 +309,15 @@ def check_favorite():
 def get_user_favorites():
     try:
         user_id = request.args.get('user_id')
-        
         if not user_id:
             return jsonify({'message': 'Kullanıcı ID gerekli'}), 400
-            
         recipes, error = db_service.get_user_favorites(user_id)
-        
         if error:
             return jsonify({'message': error}), 400
-            
+        # Her tarif için is_favorited alanını ekle
+        for recipe in recipes:
+            recipe['is_favorited'] = True  # Çünkü bu liste zaten favoriler
         return jsonify({'recipes': recipes}), 200
-            
     except Exception as e:
         return jsonify({'message': str(e)}), 500
 
@@ -775,8 +807,15 @@ def delete_recipe(recipe_id):
 
 @app.route('/api/recipes/<int:recipe_id>', methods=['GET'])
 def get_recipe_detail(recipe_id):
+    user_id = request.args.get('user_id')
     recipe = db_service.get_recipe_detail(recipe_id)
     if recipe:
+        # Kullanıcı giriş yaptıysa favori kontrolü yap
+        if user_id:
+            is_favorited, _ = db_service.is_favorite(user_id, recipe_id)
+            recipe['is_favorited'] = is_favorited
+        else:
+            recipe['is_favorited'] = False
         return Response(
             json.dumps(recipe, ensure_ascii=False, cls=CustomJSONEncoder),
             content_type="application/json; charset=utf-8"

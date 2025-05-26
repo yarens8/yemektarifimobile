@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../providers/user_provider.dart';
+import 'package:provider/provider.dart';
 
 class RecipeProvider extends ChangeNotifier {
   final _apiService = ApiService();
@@ -16,18 +18,18 @@ class RecipeProvider extends ChangeNotifier {
   }
 
   // İlk veri yüklemesi
-  Future<void> loadInitialData() async {
+  Future<void> loadInitialData(int? userId) async {
     if (_categories.isNotEmpty) return; // Veriler zaten yüklüyse tekrar çekme
-    await _refreshData();
+    await _refreshData(userId);
   }
 
   // Verileri yenile
-  Future<void> refreshData() async {
-    await _refreshData();
+  Future<void> refreshData(int? userId) async {
+    await _refreshData(userId);
   }
 
   // Verileri yenileme işlemi
-  Future<void> _refreshData() async {
+  Future<void> _refreshData(int? userId) async {
     try {
       _isLoading = true;
       notifyListeners();
@@ -35,7 +37,7 @@ class RecipeProvider extends ChangeNotifier {
       // Kategorileri ve tarifleri paralel olarak yükle
       final results = await Future.wait([
         _apiService.getCategories(),
-        _apiService.getRecipes(),
+        _apiService.getRecipes(userId: userId),
       ]);
 
       _categories = results[0];
@@ -48,24 +50,19 @@ class RecipeProvider extends ChangeNotifier {
         if (!_recipesByCategory.containsKey(categoryId)) {
           _recipesByCategory[categoryId] = [];
         }
-        
         // Mevcut tarif varsa, puanlama bilgilerini koru
         final existingRecipeIndex = _recipesByCategory[categoryId]!
             .indexWhere((r) => r['id'] == recipe['id']);
-            
         if (existingRecipeIndex != -1) {
-          // Mevcut tarifi güncelle ama puanlama bilgilerini koru
           final existingRecipe = _recipesByCategory[categoryId]![existingRecipeIndex];
           recipe['average_rating'] = recipe['average_rating'] ?? existingRecipe['average_rating'];
           recipe['rating_count'] = recipe['rating_count'] ?? existingRecipe['rating_count'];
           recipe['user_rating'] = recipe['user_rating'] ?? existingRecipe['user_rating'];
           _recipesByCategory[categoryId]![existingRecipeIndex] = recipe;
         } else {
-          // Yeni tarif ekle
-        _recipesByCategory[categoryId]!.add(recipe);
+          _recipesByCategory[categoryId]!.add(recipe);
         }
       }
-
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -82,18 +79,18 @@ class RecipeProvider extends ChangeNotifier {
 
   // Yeni tarif eklendikten sonra
   Future<void> onRecipeAdded() async {
-    await refreshData(); // Tüm verileri yenile
+    await refreshData(null); // Tüm verileri yenile
   }
 
   // Tarif silindikten sonra
   Future<void> onRecipeDeleted() async {
-    await refreshData(); // Tüm verileri yenile
+    await refreshData(null); // Tüm verileri yenile
   }
 
   // Tarif arama
-  Future<List<Map<String, dynamic>>> searchRecipes(String query) async {
+  Future<List<Map<String, dynamic>>> searchRecipes(String query, int? userId) async {
     try {
-      return await _apiService.searchRecipes(query);
+      return await _apiService.searchRecipes(query, userId: userId);
     } catch (e) {
       rethrow;
     }
