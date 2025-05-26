@@ -60,7 +60,7 @@ class RecipeProvider extends ChangeNotifier {
           recipe['user_rating'] = recipe['user_rating'] ?? existingRecipe['user_rating'];
           _recipesByCategory[categoryId]![existingRecipeIndex] = recipe;
         } else {
-          _recipesByCategory[categoryId]!.add(recipe);
+        _recipesByCategory[categoryId]!.add(recipe);
         }
       }
       _isLoading = false;

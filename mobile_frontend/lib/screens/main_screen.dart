@@ -19,7 +19,6 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    SearchScreen(),
     const CategoriesScreen(),
     IngredientSuggestionScreen(),
     const ProfileScreen(),
@@ -57,10 +56,6 @@ class _MainScreenState extends State<MainScreen> {
               BottomNavigationBarItem(
                 icon: Icon(Icons.home),
                 label: 'Ana Sayfa',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.search),
-                label: 'Arama',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.category),

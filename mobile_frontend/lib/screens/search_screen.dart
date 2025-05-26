@@ -179,16 +179,20 @@ class RecipeSearchDelegate extends SearchDelegate<String> {
           itemCount: recipes.length,
           itemBuilder: (context, index) {
             final recipe = recipes[index];
+            print('Aranan dosya: assets/recipe_images/[1m${recipe['image_filename']}[0m');
             return ListTile(
-              leading: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.restaurant, color: Colors.grey.shade400),
-              ),
+              leading: (recipe['image_filename'] != null && recipe['image_filename'].toString().isNotEmpty)
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.asset(
+                        'assets/recipe_images/${recipe['image_filename']}',
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Icon(Icons.restaurant, color: Colors.grey.shade400),
+                      ),
+                    )
+                  : Icon(Icons.restaurant, color: Colors.grey.shade400),
               title: Text(recipe['title'] ?? ''),
               subtitle: Text(recipe['preparation_time'] ?? ''),
               trailing: Text('${recipe['views'] ?? 0} görüntülenme'),

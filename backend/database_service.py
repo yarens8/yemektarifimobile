@@ -428,7 +428,7 @@ class DatabaseService:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
-                    SELECT 
+                    SELECT
                         r.id AS id, 
                         r.title AS title, 
                         r.views AS views, 
@@ -470,7 +470,7 @@ class DatabaseService:
                 print(f"Found {len(recipes)} recipes")  # Debug log
                 print("Recipes:", recipes)  # Debug log
                 return recipes[:20]
-        
+                
         except Exception as e:
             print(f"Error in get_user_recipes: {str(e)}")  # Debug log
             raise Exception(f"Kullanıcının tarifleri getirilirken hata oluştu: {str(e)}")
@@ -627,7 +627,7 @@ class DatabaseService:
                 # Şimdi id'yi al
                 cursor.execute("SELECT SCOPE_IDENTITY() as id;")
                 recipe_id = cursor.fetchone()[0]
-
+                
                 # Yeni eklenen tarifi getir
                 cursor.execute("""
                     SELECT 
@@ -648,7 +648,7 @@ class DatabaseService:
                 """, (recipe_id,))
                 recipe = cursor.fetchone()
                 conn.commit()
-
+                
                 if recipe:
                     return {
                         'id': recipe[0],
