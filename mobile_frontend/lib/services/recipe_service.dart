@@ -625,4 +625,66 @@ class RecipeService {
       return false;
     }
   }
+
+  /// Sayfalama destekli kullanıcı tarifleri
+  Future<Map<String, dynamic>> getUserRecipesPaged(int userId, {int page = 1, int limit = 20}) async {
+    print('Fetching paged recipes for userId: $userId, page: $page, limit: $limit');
+    int retryCount = 0;
+    Exception? lastError;
+    while (retryCount < maxRetries) {
+      try {
+        final url = Uri.parse('$baseUrl/recipes/user/$userId?page=$page&limit=$limit');
+        print('Attempt [38;5;2m[1m[4m[7m${retryCount + 1}[0m: Request URL: $url');
+        final response = await http.get(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ).timeout(const Duration(seconds: 30));
+        print('Response status code: ${response.statusCode}');
+        if (response.statusCode == 200) {
+          final responseBody = utf8.decode(response.bodyBytes);
+          print('Response body: $responseBody');
+          if (responseBody.isEmpty) {
+            return {'recipes': <Recipe>[], 'totalCount': 0};
+          }
+          final Map<String, dynamic> jsonData = json.decode(responseBody);
+          final List<dynamic> recipesJson = jsonData['recipes'] ?? [];
+          final int totalCount = jsonData['total_count'] ?? 0;
+          final recipes = recipesJson.map((json) => Recipe.fromJson(json)).toList();
+          return {'recipes': recipes, 'totalCount': totalCount};
+        } else {
+          final error = _parseError(response);
+          throw Exception(error);
+        }
+      } catch (e) {
+        print('Error in attempt ${retryCount + 1}: $e');
+        lastError = e is Exception ? e : Exception(e.toString());
+        if (retryCount < maxRetries - 1) {
+          retryCount++;
+          await Future.delayed(Duration(seconds: retryCount * 2));
+          continue;
+        }
+        break;
+      }
+    }
+    throw lastError ?? Exception('Bağlantı hatası: Sunucuya ulaşılamıyor');
+  }
+
+  Future<void> incrementRecipeView(int recipeId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/recipes/$recipeId/increment-view'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+      if (response.statusCode != 200) {
+        print('Görüntülenme artırılamadı: ${response.body}');
+      }
+    } catch (e) {
+      print('Görüntülenme artırılırken hata: $e');
+    }
+  }
 } 

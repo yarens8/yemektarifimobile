@@ -18,12 +18,76 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
   late RecipeService recipeService;
   late int userId;
 
+  List<Recipe> _recipes = [];
+  int _currentPage = 1;
+  int _totalCount = 0;
+  bool _isLoading = false;
+  bool _hasMore = true;
+  final int _pageSize = 20;
+  final ScrollController _scrollController = ScrollController();
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    recipeService = RecipeService();
+    _scrollController.addListener(_onScroll);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final user = context.read<UserProvider>().currentUser;
     userId = user?.id ?? 0;
-    recipeService = RecipeService();
+    if (_recipes.isEmpty) {
+      _fetchRecipes(reset: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchRecipes({bool reset = false}) async {
+    if (_isLoading || (!_hasMore && !reset)) return;
+    setState(() {
+      _isLoading = true;
+      if (reset) {
+        _recipes = [];
+        _currentPage = 1;
+        _hasMore = true;
+        _errorMessage = null;
+      }
+    });
+    try {
+      final result = await recipeService.getUserRecipesPaged(userId, page: _currentPage, limit: _pageSize);
+      final List<Recipe> newRecipes = List<Recipe>.from(result['recipes'] ?? []);
+      final int total = result['totalCount'] ?? 0;
+      setState(() {
+        _totalCount = total;
+        if (reset) {
+          _recipes = newRecipes;
+        } else {
+          _recipes.addAll(newRecipes);
+        }
+        _hasMore = _recipes.length < _totalCount;
+        if (_hasMore) _currentPage++;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Bir hata oluştu: $e';
+      });
+    }
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 && !_isLoading && _hasMore) {
+      _fetchRecipes();
+    }
   }
 
   Future<void> _deleteRecipe(int recipeId) async {
@@ -149,85 +213,83 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: FutureBuilder<List<Recipe>>(
-        future: recipeService.getUserRecipes(user.id!),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
-              ),
-            );
-          }
-
-          if (snapshot.hasError) {
-            return Center(
+      body: _errorMessage != null
+          ? Center(
               child: Text(
-                'Bir hata oluştu: ${snapshot.error}',
+                _errorMessage!,
                 style: TextStyle(
                   color: Colors.grey.shade600,
                   fontSize: 16,
                 ),
               ),
-            );
-          }
-
-          final recipes = snapshot.data ?? [];
-
-          if (recipes.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.restaurant_menu,
-                    size: 64,
-                    color: Colors.grey.shade400,
+            )
+          : _recipes.isEmpty && !_isLoading
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.restaurant_menu,
+                        size: 64,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Henüz tarif eklememişsiniz',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Henüz tarif eklememişsiniz',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade600,
+                )
+              : Stack(
+                  children: [
+                    ListView.builder(
+                      controller: _scrollController,
+                      itemCount: _recipes.length + (_hasMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index < _recipes.length) {
+                          final recipe = _recipes[index];
+                          return RecipeCard(
+                            recipe: recipe,
+                            onDelete: () => _showDeleteConfirmation(recipe.id!),
+                            onEdit: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => RecipeEditScreen(recipe: recipe),
+                                ),
+                              ).then((value) {
+                                if (value == true) _fetchRecipes(reset: true);
+                              });
+                            },
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => RecipeDetailScreen(recipe: recipe),
+                                ),
+                              );
+                            },
+                          );
+                        } else {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                      },
                     ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: recipes.length,
-            itemBuilder: (context, index) {
-              final recipe = recipes[index];
-              return RecipeCard(
-                recipe: recipe,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => RecipeDetailScreen(recipeId: recipe.id),
-                    ),
-                  );
-                },
-                onEdit: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => RecipeEditScreen(recipe: recipe),
-                    ),
-                  ).then((_) => setState(() {}));
-                },
-                onDelete: () {
-                  _showDeleteConfirmation(recipe.id);
-                },
-              );
-            },
-          );
-        },
-      ),
+                    if (_isLoading && _recipes.isEmpty)
+                      const Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
+                        ),
+                      ),
+                  ],
+                ),
     );
   }
 } 

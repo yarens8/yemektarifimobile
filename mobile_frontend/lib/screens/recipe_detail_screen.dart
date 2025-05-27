@@ -39,9 +39,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         print('Tarif: ${_recipe!.title}');
         print('Resim dosya adı: ${_recipe!.imageFilename}');
       }
+      _recipeService.incrementRecipeView(_recipe!.id);
       _loadUserRating();
       _loadComments();
     } else if (widget.recipeId != null) {
+      _recipeService.incrementRecipeView(widget.recipeId!);
       _loadRecipeDetails();
     }
   }

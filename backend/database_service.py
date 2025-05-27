@@ -421,13 +421,13 @@ class DatabaseService:
             self.logger.error(f"Şifre değiştirilirken hata: {str(e)}")
             return None, str(e)
 
-    def get_user_recipes(self, user_id):
-        """Kullanıcının tariflerini getirir"""
+    def get_user_recipes(self, user_id, page=None, limit=None):
+        """Kullanıcının tariflerini getirir (opsiyonel sayfalama)"""
         try:
             print(f"Getting recipes for user_id: {user_id}")  # Debug log
             with self.get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                base_query = """
                     SELECT
                         r.id AS id, 
                         r.title AS title, 
@@ -449,7 +449,13 @@ class DatabaseService:
                     LEFT JOIN [dbo].[User] u ON r.user_id = u.id
                     WHERE r.user_id = ?
                     ORDER BY r.created_at DESC
-                """, (user_id,))
+                """
+                params = [user_id]
+                if page is not None and limit is not None:
+                    offset = (page - 1) * limit
+                    base_query += f" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY"
+                    params.extend([offset, limit])
+                cursor.execute(base_query, params)
                 columns = [column[0] for column in cursor.description]
                 recipes = []
                 for row in cursor.fetchall():
@@ -474,6 +480,18 @@ class DatabaseService:
         except Exception as e:
             print(f"Error in get_user_recipes: {str(e)}")  # Debug log
             raise Exception(f"Kullanıcının tarifleri getirilirken hata oluştu: {str(e)}")
+
+    def get_user_recipes_count(self, user_id):
+        """Kullanıcının toplam tarif sayısını döndürür"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT COUNT(*) FROM [dbo].[Recipe] WHERE user_id = ?", (user_id,))
+                count = cursor.fetchone()[0]
+                return count
+        except Exception as e:
+            print(f"Error in get_user_recipes_count: {str(e)}")
+            return 0
 
     def add_to_favorites(self, user_id, recipe_id):
         """Tarifi kullanıcının favorilerine ekler"""

@@ -228,18 +228,29 @@ def get_user_recipes(user_id):
         logger.info(f"Received request for user_id: {user_id}")
         user_id = int(user_id)
         logger.info(f"Converted user_id to int: {user_id}")
-        
-        recipes = db_service.get_user_recipes(user_id)
+
+        # Pagination parametrelerini al
+        page = request.args.get('page', default=None, type=int)
+        limit = request.args.get('limit', default=None, type=int)
+
+        # Toplam tarif sayısını al
+        total_count = db_service.get_user_recipes_count(user_id)
+
+        # Tarifleri getir (sayfalama ile veya tam liste)
+        recipes = db_service.get_user_recipes(user_id, page=page, limit=limit)
         # Her tarif için favori kontrolü ekle
         for recipe in recipes:
             is_favorited, _ = db_service.is_favorite(user_id, recipe['id'])
             recipe['is_favorited'] = is_favorited
 
         logger.info(f"Successfully retrieved {len(recipes)} recipes")
-        response = jsonify(recipes)
+        response = jsonify({
+            'recipes': recipes,
+            'total_count': total_count
+        })
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
-        
+
     except Exception as e:
         logger.error(f"Error in get_user_recipes endpoint: {str(e)}")
         error_response = jsonify({'error': str(e)})
@@ -502,17 +513,17 @@ def suggest_recipes():
         porsiyon = filters['porsiyon']
         print('[DEBUG] Adding serving size filter:', porsiyon)
         if porsiyon == '1-2 Kişilik':
-            where_sql += " AND serving_size LIKE ?"
+            where_sql += " AND (serving_size LIKE ? OR TRY_CAST(serving_size AS INT) BETWEEN 1 AND 2)"
             params.append('%1-2%')
         elif porsiyon == '3-4 Kişilik':
-            where_sql += " AND serving_size LIKE ?"
+            where_sql += " AND (serving_size LIKE ? OR TRY_CAST(serving_size AS INT) BETWEEN 3 AND 4)"
             params.append('%3-4%')
         elif porsiyon == '5-6 Kişilik':
-            where_sql += " AND serving_size LIKE ?"
+            where_sql += " AND (serving_size LIKE ? OR TRY_CAST(serving_size AS INT) BETWEEN 5 AND 6)"
             params.append('%5-6%')
         elif porsiyon == '6+ Kişilik':
-            where_sql += " AND (serving_size LIKE ? OR TRY_CAST(serving_size AS INT) >= ?)"
-            params.extend(['%6+%', 6])
+            where_sql += " AND (serving_size LIKE ? OR TRY_CAST(serving_size AS INT) >= 6)"
+            params.append('%6+%')
 
     query = f"""
     SELECT r.*, 
@@ -822,6 +833,17 @@ def get_recipe_detail(recipe_id):
         )
     else:
         return jsonify({'error': 'Tarif bulunamadı'}), 404
+
+@app.route('/api/recipes/<int:recipe_id>/increment-view', methods=['POST'])
+def increment_recipe_view(recipe_id):
+    try:
+        with db_service.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE [dbo].[Recipe] SET views = ISNULL(views, 0) + 1 WHERE id = ?", (recipe_id,))
+            conn.commit()
+        return jsonify({'success': True, 'message': 'Görüntülenme sayısı artırıldı.'}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
     try:

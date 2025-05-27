@@ -59,15 +59,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   }
 
   Future<void> _updateRecipe() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_servingsController.text.trim().isEmpty ||
-        _imageController.text.trim().isEmpty ||
-        _instructionsController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen tüm zorunlu alanları doldurun!')),
-      );
-      return;
-    }
+    // Hiçbir alan zorunlu değil, validasyon yok
     setState(() => _isLoading = true);
     final updatedFields = {
       'id': widget.recipe.id,
@@ -152,7 +144,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                         controller: _titleController,
                         decoration: _inputDecoration('Tarif adı'),
                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: kText),
-                        validator: (v) => v == null || v.isEmpty ? 'Başlık gerekli' : null,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -163,7 +154,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                         decoration: _inputDecoration('Malzemeleri girin'),
                         maxLines: 4,
                         style: const TextStyle(fontSize: 16, color: kText),
-                        validator: (v) => v == null || v.isEmpty ? 'Malzemeler gerekli' : null,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -174,7 +164,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                         decoration: _inputDecoration('Hazırlanışı yazın'),
                         maxLines: 5,
                         style: const TextStyle(fontSize: 16, color: kText),
-                        validator: (v) => v == null || v.isEmpty ? 'Hazırlanış gerekli' : null,
                       ),
                     ),
                     const SizedBox(height: 20),
