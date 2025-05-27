@@ -5,6 +5,7 @@ import 'recipe_detail_screen.dart';
 import 'category_recipes_screen.dart';
 import '../models/recipe.dart';
 import '../providers/user_provider.dart';
+import 'auth/login_screen.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -282,7 +283,17 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: InkWell(
-        onTap: () => _showRecipeDetails(recipe),
+        onTap: () {
+          final userProvider = Provider.of<UserProvider>(context, listen: false);
+          if (userProvider.currentUser == null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+            );
+          } else {
+            _showRecipeDetails(recipe);
+          }
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

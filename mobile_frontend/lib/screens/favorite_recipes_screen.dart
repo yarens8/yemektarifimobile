@@ -5,6 +5,7 @@ import '../services/recipe_service.dart';
 import '../providers/user_provider.dart';
 import '../widgets/recipe_card.dart';
 import 'recipe_detail_screen.dart';
+import 'auth/login_screen.dart';
 
 class FavoriteRecipesScreen extends StatefulWidget {
   const FavoriteRecipesScreen({Key? key}) : super(key: key);
@@ -22,6 +23,21 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
   void initState() {
     super.initState();
     _loadFavoriteRecipes();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final user = context.read<UserProvider>().currentUser;
+    if (user == null) {
+      // Otomatik olarak giriş ekranına yönlendir
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+      });
+    }
   }
 
   Future<void> _loadFavoriteRecipes() async {
@@ -70,28 +86,7 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
         elevation: 0,
       ),
       body: user == null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Favori tarifleri görmek için\ngiriş yapmalısınız',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Giriş Yap'),
-                  ),
-                ],
-              ),
-            )
+          ? const SizedBox.shrink()
           : _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _favoriteRecipes.isEmpty

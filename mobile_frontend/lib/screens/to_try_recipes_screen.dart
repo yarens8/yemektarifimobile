@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../services/recipe_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'auth/login_screen.dart';
 
 class ToTryRecipesScreen extends StatefulWidget {
   const ToTryRecipesScreen({Key? key}) : super(key: key);
@@ -174,7 +175,15 @@ class _ToTryRecipesScreenState extends State<ToTryRecipesScreen> {
                                 Expanded(
                                   child: ElevatedButton(
                                     onPressed: () async {
-                                      await _addToAiRecipes(index);
+                                      final userProvider = Provider.of<UserProvider>(context, listen: false);
+                                      if (userProvider.currentUser == null) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                        );
+                                      } else {
+                                        await _addToAiRecipes(index);
+                                      }
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.green,

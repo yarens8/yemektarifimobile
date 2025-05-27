@@ -5,6 +5,7 @@ import '../models/recipe.dart';
 import 'recipe_detail_screen.dart';
 import '../providers/user_provider.dart';
 import 'package:provider/provider.dart';
+import 'auth/login_screen.dart';
 
 class CategoryRecipesScreen extends StatefulWidget {
   final int categoryId;
@@ -108,12 +109,20 @@ class _CategoryRecipesScreenState extends State<CategoryRecipesScreen> {
       ),
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RecipeDetailScreen(recipe: Recipe.fromJson(recipe)),
-            ),
-          );
+          final userProvider = Provider.of<UserProvider>(context, listen: false);
+          if (userProvider.currentUser == null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RecipeDetailScreen(recipe: Recipe.fromJson(recipe)),
+              ),
+            );
+          }
         },
         borderRadius: BorderRadius.circular(12),
         child: Column(

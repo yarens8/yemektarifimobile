@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/recipe_provider.dart';
 import 'recipe_detail_screen.dart';
 import '../models/recipe.dart';
+import 'auth/login_screen.dart';
+import '../providers/user_provider.dart';
 
 class FilteredRecipesListScreen extends StatefulWidget {
   final String filterType;
@@ -152,16 +154,24 @@ class _FilteredRecipesListScreenState extends State<FilteredRecipesListScreen> {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => FilteredRecipesResultScreen(
-                            filterType: widget.filterType,
-                            filterValue: option['value'],
-                            title: option['name'],
+                      final userProvider = Provider.of<UserProvider>(context, listen: false);
+                      if (userProvider.currentUser == null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        );
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FilteredRecipesResultScreen(
+                              filterType: widget.filterType,
+                              filterValue: option['value'],
+                              title: option['name'],
+                            ),
                           ),
-                        ),
-                      );
+                        );
+                      }
                     },
                     child: Container(
                       padding: const EdgeInsets.all(16),
@@ -769,12 +779,20 @@ class _FilteredRecipesListScreenState extends State<FilteredRecipesListScreen> {
           ),
           child: InkWell(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RecipeDetailScreen(recipe: Recipe.fromJson(recipe)),
-                ),
-              );
+              final userProvider = Provider.of<UserProvider>(context, listen: false);
+              if (userProvider.currentUser == null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RecipeDetailScreen(recipe: Recipe.fromJson(recipe)),
+                  ),
+                );
+              }
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1136,12 +1154,20 @@ class FilteredRecipesResultScreen extends StatelessWidget {
           ),
           child: InkWell(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RecipeDetailScreen(recipe: Recipe.fromJson(recipe)),
-                ),
-              );
+              final userProvider = Provider.of<UserProvider>(context, listen: false);
+              if (userProvider.currentUser == null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RecipeDetailScreen(recipe: Recipe.fromJson(recipe)),
+                  ),
+                );
+              }
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

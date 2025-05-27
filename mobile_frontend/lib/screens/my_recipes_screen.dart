@@ -6,6 +6,7 @@ import '../services/recipe_service.dart';
 import '../screens/recipe_detail_screen.dart';
 import '../screens/recipe_edit_screen.dart';
 import '../widgets/recipe_card.dart';
+import 'auth/login_screen.dart';
 
 class MyRecipesScreen extends StatefulWidget {
   const MyRecipesScreen({super.key});
@@ -266,12 +267,20 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                               });
                             },
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => RecipeDetailScreen(recipe: recipe),
-                                ),
-                              );
+                              final userProvider = Provider.of<UserProvider>(context, listen: false);
+                              if (userProvider.currentUser == null) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                );
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => RecipeDetailScreen(recipe: recipe),
+                                  ),
+                                );
+                              }
                             },
                           );
                         } else {

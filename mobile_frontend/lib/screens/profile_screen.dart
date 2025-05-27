@@ -8,6 +8,7 @@ import 'favorite_recipes_screen.dart';
 import 'user_recipes_screen.dart';
 import 'add_recipe_screen.dart';
 import 'to_try_recipes_screen.dart';
+import 'main_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -56,10 +57,10 @@ class ProfileScreen extends StatelessWidget {
                         onPressed: () {
                           // UserProvider'dan çıkış yap
                           context.read<UserProvider>().clearUser();
-                          // Login ekranına yönlendir
+                          // Ana ekrana yönlendir
                           Navigator.pushAndRemoveUntil(
                             context,
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            MaterialPageRoute(builder: (context) => const MainScreen()),
                             (route) => false,
                           );
                         },

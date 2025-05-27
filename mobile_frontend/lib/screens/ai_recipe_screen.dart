@@ -5,6 +5,7 @@ import '../models/recipe.dart';
 import '../widgets/recipe_card.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import 'auth/login_screen.dart';
 
 class ChatMessage {
   final String? text; // Kullanıcı mesajı

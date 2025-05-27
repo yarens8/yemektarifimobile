@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
 import 'recipe_detail_screen.dart';
+import 'auth/login_screen.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 
 class UserRecipesScreen extends StatefulWidget {
   final int userId;
@@ -65,12 +68,20 @@ class _UserRecipesScreenState extends State<UserRecipesScreen> {
                       ),
                       child: InkWell(
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => RecipeDetailScreen(recipe: recipe),
-                            ),
-                          );
+                          final userProvider = Provider.of<UserProvider>(context, listen: false);
+                          if (userProvider.currentUser == null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            );
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => RecipeDetailScreen(recipe: recipe),
+                              ),
+                            );
+                          }
                         },
                         child: Container(
                           padding: const EdgeInsets.all(12),
