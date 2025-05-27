@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.pink,
           scaffoldBackgroundColor: Colors.grey[50],
         ),
-        home: const LoginScreen(),
+        home: const MainScreen(),
       ),
     );
   }

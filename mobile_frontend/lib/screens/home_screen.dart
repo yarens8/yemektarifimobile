@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:http/http.dart' show HttpDate;
 import '../providers/user_provider.dart';
+import 'auth/login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -259,14 +260,22 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RecipeDetailScreen(
-                recipe: Recipe.fromJson(recipe),
+          final userProvider = Provider.of<UserProvider>(context, listen: false);
+          if (userProvider.currentUser == null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RecipeDetailScreen(
+                  recipe: Recipe.fromJson(recipe),
+                ),
               ),
-            ),
-          );
+            );
+          }
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
