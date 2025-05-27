@@ -50,6 +50,22 @@ class FilteredRecipesScreen extends StatelessWidget {
           ),
           _buildFilterSection(
             context,
+            'Pişirme Süresi',
+            Icons.local_fire_department,
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FilteredRecipesListScreen(
+                    filterType: 'cooking_time',
+                    title: 'Pişirme Süresi',
+                  ),
+                ),
+              );
+            },
+          ),
+          _buildFilterSection(
+            context,
             'Hazırlık Süresi',
             Icons.timer,
             () {

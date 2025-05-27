@@ -151,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryList(RecipeProvider provider) {
-    final categories = provider.categories.where((category) => category['name'] != 'Tümü').toList();
+    final categories = provider.categories.where((category) => category['name'] != 'Tümü' && category['name'] != 'Yapay Zeka Tariflerim').toList();
     
     return Container(
       height: 48,

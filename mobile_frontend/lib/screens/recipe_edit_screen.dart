@@ -211,38 +211,17 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _FieldLabel('Hazırlama Süresi'),
-                              _FieldCard(
-                                child: TextFormField(
-                                  controller: _prepTimeController,
-                                  decoration: _inputDecoration('Örn: 20 dk'),
-                                  style: const TextStyle(fontSize: 16, color: kText),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
                               _FieldLabel('Pişirme Süresi'),
                               _FieldCard(
                                 child: TextFormField(
                                   controller: _cookTimeController,
-                                  decoration: _inputDecoration('Örn: 40 dk'),
+                                  decoration: _inputDecoration('Örn: 45 dk'),
                                   style: const TextStyle(fontSize: 16, color: kText),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 16),
                       ],
                     ),
                     const SizedBox(height: 20),

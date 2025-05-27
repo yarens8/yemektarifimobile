@@ -116,38 +116,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                   color: color.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
-                                child: Stack(
-                                  children: [
-                                    Center(
-                                      child: _buildCategoryIcon(category['name'] ?? '', color),
-                                    ),
-                                    Positioned(
-                                      right: -4,
-                                      bottom: -4,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(12),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: color.withOpacity(0.2),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Text(
-                                          '${recipes.length}',
-                                          style: TextStyle(
-                                            color: color,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                child: Center(
+                                  child: _buildCategoryIcon(category['name'] ?? '', color),
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -269,7 +239,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         imagePath = 'assets/category_images/tatli.jpg';
         break;
       case 'yapay zeka tariflerim':
-        imagePath = 'assets/category_images/yapay_zeka_tariflerim.jpeg';
+        imagePath = 'assets/category_images/yapay_zeka_tariflerim.jpg';
         break;
       default:
         return Icon(Icons.restaurant_menu_rounded, color: color, size: 28);

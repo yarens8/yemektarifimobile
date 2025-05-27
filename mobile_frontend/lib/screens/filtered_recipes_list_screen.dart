@@ -220,22 +220,6 @@ class _FilteredRecipesListScreenState extends State<FilteredRecipesListScreen> {
                                     color: Colors.black87,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: color.withOpacity(0.08),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    '${option['count']} tarif',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: color,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
                               ],
                             ),
                           ),
@@ -260,11 +244,13 @@ class _FilteredRecipesListScreenState extends State<FilteredRecipesListScreen> {
   List<Map<String, dynamic>> _getFilterOptions(String filterType, RecipeProvider provider) {
     switch (filterType) {
       case 'category':
-        return provider.categories.map((category) => {
-          'name': category['name'],
-          'value': category['id'],
-          'count': provider.getRecipesForCategory(category['id']).length,
-        }).toList();
+        return provider.categories
+          .where((category) => category['name'] != 'Tümü')
+          .map((category) => {
+            'name': category['name'],
+            'value': category['id'],
+            'count': provider.getRecipesForCategory(category['id']).length,
+          }).toList();
       
       case 'ingredient':
         // Malzeme seçenekleri (örnek)
@@ -274,22 +260,22 @@ class _FilteredRecipesListScreenState extends State<FilteredRecipesListScreen> {
           {'name': 'Domates', 'value': 'domates', 'count': 20},
         ];
       
-      case 'preparation_time':
-        // Hazırlık süresi seçenekleri için dinamik sayılar
+      case 'cooking_time':
+        // Pişirme süresi seçenekleri için dinamik sayılar
         final recipes = provider.recipes;
         int under30Count = 0;
         int between30And60Count = 0;
         int over60Count = 0;
 
         for (var recipe in recipes) {
-          final prepTime = recipe['preparation_time']?.toString().toLowerCase() ?? '';
+          final cookTime = recipe['cooking_time']?.toString().toLowerCase() ?? '';
           int minutes = 0;
           
-          if (prepTime.contains('saat')) {
-            final hours = double.tryParse(prepTime.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
+          if (cookTime.contains('saat')) {
+            final hours = double.tryParse(cookTime.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
             minutes = (hours * 60).round();
-          } else if (prepTime.contains('dk') || prepTime.contains('dakika')) {
-            minutes = int.tryParse(prepTime.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+          } else if (cookTime.contains('dk') || cookTime.contains('dakika')) {
+            minutes = int.tryParse(cookTime.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
           }
 
           if (minutes <= 30) {
@@ -335,6 +321,39 @@ class _FilteredRecipesListScreenState extends State<FilteredRecipesListScreen> {
           {'name': '3-4 Kişilik', 'value': 4, 'count': between2And4Count},
           {'name': '5-6 Kişilik', 'value': 6, 'count': between4And6Count},
           {'name': '6+ Kişilik', 'value': 7, 'count': over6Count},
+        ];
+      
+      case 'preparation_time':
+        // Hazırlık süresi seçenekleri için dinamik sayılar
+        final recipes = provider.recipes;
+        int under30Count = 0;
+        int between30And60Count = 0;
+        int over60Count = 0;
+
+        for (var recipe in recipes) {
+          final prepTime = recipe['preparation_time']?.toString().toLowerCase() ?? '';
+          int minutes = 0;
+          
+          if (prepTime.contains('saat')) {
+            final hours = double.tryParse(prepTime.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
+            minutes = (hours * 60).round();
+          } else if (prepTime.contains('dk') || prepTime.contains('dakika')) {
+            minutes = int.tryParse(prepTime.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+          }
+
+          if (minutes <= 30) {
+            under30Count++;
+          } else if (minutes > 30 && minutes <= 60) {
+            between30And60Count++;
+          } else if (minutes > 60) {
+            over60Count++;
+          }
+        }
+
+        return [
+          {'name': '30 dakikadan az', 'value': 30, 'count': under30Count},
+          {'name': '30-60 dakika', 'value': 60, 'count': between30And60Count},
+          {'name': '60 dakikadan fazla', 'value': 61, 'count': over60Count},
         ];
       
       default:
@@ -957,6 +976,8 @@ class _FilteredRecipesListScreenState extends State<FilteredRecipesListScreen> {
         return 'salata';
       case 'tatlı':
         return 'tatli';
+      case 'yapay zeka tariflerim':
+        return 'yapay_zeka_tariflerim';
       default:
         return '';
     }
@@ -999,13 +1020,34 @@ class FilteredRecipesResultScreen extends StatelessWidget {
                   .where((recipe) => recipe['ingredients'].toString().toLowerCase().contains(filterValue))
                   .toList();
               break;
+            case 'cooking_time':
+              // Pişirme süresine göre filtreleme
+              filteredRecipes = recipeProvider.recipes
+                  .where((recipe) {
+                    final cookTime = recipe['cooking_time']?.toString().toLowerCase() ?? '';
+                    int minutes = 0;
+                    if (cookTime.contains('saat')) {
+                      final hours = double.tryParse(cookTime.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
+                      minutes = (hours * 60).round();
+                    } else if (cookTime.contains('dk') || cookTime.contains('dakika')) {
+                      minutes = int.tryParse(cookTime.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+                    }
+                    if (filterValue == 30) {
+                      return minutes <= 30;
+                    } else if (filterValue == 60) {
+                      return minutes > 30 && minutes <= 60;
+                    } else if (filterValue == 61) {
+                      return minutes > 60;
+                    }
+                    return false;
+                  })
+                  .toList();
+              break;
             case 'preparation_time':
               // Hazırlık süresine göre filtreleme
               filteredRecipes = recipeProvider.recipes
                   .where((recipe) {
                     final prepTime = recipe['preparation_time']?.toString().toLowerCase() ?? '';
-                    
-                    // Saat ve dakika dönüşümleri
                     int minutes = 0;
                     if (prepTime.contains('saat')) {
                       final hours = double.tryParse(prepTime.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
@@ -1013,8 +1055,6 @@ class FilteredRecipesResultScreen extends StatelessWidget {
                     } else if (prepTime.contains('dk') || prepTime.contains('dakika')) {
                       minutes = int.tryParse(prepTime.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
                     }
-                    
-                    // Filtreleme
                     if (filterValue == 30) {
                       return minutes <= 30;
                     } else if (filterValue == 60) {

@@ -55,6 +55,14 @@ class FilterScreen extends StatelessWidget {
             ),
             _buildFilterCard(
               context,
+              'Pişirme Süresi',
+              'Pişirme süresine göre tarifleri bul',
+              'cooking_time',
+              const Color(0xFF42A5F5),
+              const Color(0xFFE3F2FD),
+            ),
+            _buildFilterCard(
+              context,
               'Porsiyon Sayısı',
               'Kişi sayısına göre tarifleri listele',
               'serving_size',
@@ -156,6 +164,8 @@ class FilterScreen extends StatelessWidget {
         return Icons.restaurant_menu_rounded;
       case 'preparation_time':
         return Icons.schedule_rounded;
+      case 'cooking_time':
+        return Icons.timer_rounded;
       case 'serving_size':
         return Icons.groups_rounded;
       default:

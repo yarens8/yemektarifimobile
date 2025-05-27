@@ -186,7 +186,7 @@ class _CategoryRecipesScreenState extends State<CategoryRecipesScreen> {
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
-                          '${recipe['preparation_time'] ?? 0} ',
+                          '${recipe['cooking_time'] ?? 0} ',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],

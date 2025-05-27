@@ -47,7 +47,8 @@ class RecipeProvider extends ChangeNotifier {
       _recipesByCategory.clear();
       for (var recipe in recipes) {
         print('Tarif: \'${recipe['title']}\' - category_id: \'${recipe['category_id']}\'');
-        final categoryId = int.tryParse(recipe['category_id'].toString());
+        final rawCategoryId = recipe['category_id'] ?? recipe['kategori_id'] ?? recipe['categoryId'];
+        final categoryId = int.tryParse(rawCategoryId.toString());
         if (categoryId == null) continue;
         if (!_recipesByCategory.containsKey(categoryId)) {
           _recipesByCategory[categoryId] = [];
@@ -62,7 +63,7 @@ class RecipeProvider extends ChangeNotifier {
           recipe['user_rating'] = recipe['user_rating'] ?? existingRecipe['user_rating'];
           _recipesByCategory[categoryId]![existingRecipeIndex] = recipe;
         } else {
-        _recipesByCategory[categoryId]!.add(recipe);
+          _recipesByCategory[categoryId]!.add(recipe);
         }
       }
       _isLoading = false;

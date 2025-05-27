@@ -166,14 +166,6 @@ class _ToTryRecipesScreenState extends State<ToTryRecipesScreen> {
                                       const SizedBox(width: 12),
                                     ],
                                   ),
-                                if ((recipe['preparation_time'] ?? recipe['ai_preparation_time']) != null && (recipe['preparation_time'] ?? recipe['ai_preparation_time']).toString().isNotEmpty)
-                                  Row(
-                                    children: [
-                                      Icon(Icons.kitchen, size: 16, color: Colors.grey),
-                                      const SizedBox(width: 3),
-                                      Text((recipe['preparation_time'] ?? recipe['ai_preparation_time']).toString(), style: TextStyle(fontSize: 13, color: Colors.grey[700])),
-                                    ],
-                                  ),
                               ],
                             ),
                             const SizedBox(height: 16),

@@ -140,7 +140,7 @@ class DatabaseService:
                         'title': recipes[0].get('title'),
                         'ingredients': recipes[0].get('ingredients')[:100] + '...' if recipes[0].get('ingredients') else None
                     })
-                return recipes[:150]
+                return recipes
                 
         except Exception as e:
             print(f"[DEBUG] get_recipes hatası: {str(e)}")
@@ -469,7 +469,7 @@ class DatabaseService:
                     recipes.append(recipe)
                 print(f"Found {len(recipes)} recipes")  # Debug log
                 print("Recipes:", recipes)  # Debug log
-                return recipes[:20]
+                return recipes
                 
         except Exception as e:
             print(f"Error in get_user_recipes: {str(e)}")  # Debug log
