@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, Response
+from flask import Flask, jsonify, request, Response, send_from_directory
 from database_service import db_service
 from flask_cors import CORS
 import logging
@@ -14,6 +14,7 @@ import pyodbc
 import re
 import requests
 import os
+from werkzeug.utils import secure_filename
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -38,6 +39,9 @@ CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "PUT
 # Logging ayarları
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'mobile_frontend', 'assets', 'recipe_images')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route('/')
 def home():
@@ -844,6 +848,22 @@ def increment_recipe_view(recipe_id):
         return jsonify({'success': True, 'message': 'Görüntülenme sayısı artırıldı.'}), 200
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/upload-image', methods=['POST'])
+def upload_image():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image part'}), 400
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    filename = secure_filename(file.filename)
+    save_path = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(save_path)
+    return jsonify({'filename': filename}), 200
+
+@app.route('/static/recipe_images/<filename>')
+def serve_recipe_image(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
 
 if __name__ == '__main__':
     try:

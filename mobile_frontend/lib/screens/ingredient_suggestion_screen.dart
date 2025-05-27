@@ -166,39 +166,6 @@ class _IngredientSuggestionScreenState extends State<IngredientSuggestionScreen>
           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
           children: [
             const SizedBox(height: 10),
-            // Kategori çipleri
-            SizedBox(
-              height: 48,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _categories.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final cat = _categories[index];
-                  final selected = _selectedCategoryIndex == index;
-                  return ChoiceChip(
-                    label: Row(
-                      children: [
-                        Icon(cat['icon'], size: 18, color: selected ? Colors.white : Colors.black54),
-                        const SizedBox(width: 4),
-                        Text(cat['name'], style: TextStyle(fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                    selected: selected,
-                    selectedColor: Colors.pink.shade400,
-                    backgroundColor: Colors.grey.shade100,
-                    labelStyle: TextStyle(color: selected ? Colors.white : Colors.black87),
-                    onSelected: (_) {
-                      setState(() {
-                        _selectedCategoryIndex = index;
-                      });
-                    },
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 2),
             // Malzeme ekleme alanı
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),

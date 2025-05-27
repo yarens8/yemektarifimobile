@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 const Color kPrimary = Color(0xFFA259FF); // Mor
 const Color kAccent = Color(0xFFFF7262); // Pembe
@@ -30,6 +34,9 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   late TextEditingController _imageController;
   int _selectedCategoryId = 1;
   bool _isLoading = false;
+  File? _selectedImage;
+  String? _uploadedImageFilename;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -85,6 +92,36 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Güncelleme başarısız')));
       }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+      await _uploadImage(_selectedImage!);
+    }
+  }
+
+  Future<void> _uploadImage(File imageFile) async {
+    try {
+      final request = http.MultipartRequest('POST', Uri.parse('${RecipeService.baseUrl}/upload-image'));
+      request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        final respStr = await response.stream.bytesToString();
+        final data = json.decode(respStr);
+        setState(() {
+          _uploadedImageFilename = data['filename'];
+          _imageController.text = _uploadedImageFilename ?? '';
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Görsel yüklenemedi.')));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Görsel yüklenirken hata: $e')));
     }
   }
 
@@ -214,12 +251,47 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    _FieldLabel('Görsel Dosya Adı'),
+                    _FieldLabel('Görsel'),
                     _FieldCard(
-                      child: TextFormField(
-                        controller: _imageController,
-                        decoration: _inputDecoration('örn: yemek.jpg'),
-                        style: const TextStyle(fontSize: 16, color: kText),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_selectedImage != null)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.file(_selectedImage!, height: 120, fit: BoxFit.cover),
+                            )
+                          else if (_imageController.text.isNotEmpty)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                'http://10.0.2.2:5000/static/recipe_images/${_imageController.text}',
+                                height: 120,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  height: 120,
+                                  color: Colors.grey[200],
+                                  child: const Center(child: Icon(Icons.broken_image, color: Colors.redAccent)),
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 8),
+                          ElevatedButton.icon(
+                            onPressed: _pickImage,
+                            icon: const Icon(Icons.image),
+                            label: const Text('Görsel Seç'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kPrimary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                          if (_uploadedImageFilename != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6.0),
+                              child: Text('Yüklendi: $_uploadedImageFilename', style: const TextStyle(fontSize: 13, color: kHint)),
+                            ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 20),
